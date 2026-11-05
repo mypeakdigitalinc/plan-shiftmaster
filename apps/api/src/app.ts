@@ -16,6 +16,7 @@ import {
   updateOrgSettingsInput,
   type Organization,
 } from '@shifthub/shared';
+import { devLoginRoutes } from './dev-login';
 import { AuthError, type AuthUser, type VerifyToken } from './auth';
 import type { Db, Tx } from './db';
 import { HttpError, toHttpError } from './errors';
@@ -41,6 +42,8 @@ export type AppDeps = {
   verifyToken: VerifyToken;
   corsOrigins?: string[];
   appUrl?: string;
+  /** DEV ONLY — HS256 secret to enable POST /dev/token. Never set in production. */
+  devLoginSecret?: string;
 };
 
 // ---------- shared queries ----------
@@ -72,6 +75,12 @@ export function createApp(deps: AppDeps) {
   });
 
   app.use('*', cors({ origin: deps.corsOrigins ?? ['http://localhost:3000'], credentials: true }));
+
+  if (deps.devLoginSecret) {
+    app.route('/', devLoginRoutes(deps.db, deps.devLoginSecret));
+  }
+
+  app.notFound((c) => c.json({ error: { code: 'not_found', message: 'Route not found' } }, 404));
 
   app.onError((err, c) => {
     if (err instanceof AuthError) return c.json({ error: { code: 'unauthorized', message: err.message } }, 401);

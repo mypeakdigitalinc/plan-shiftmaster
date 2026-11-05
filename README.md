@@ -3,7 +3,7 @@
 Multi-tenant shift scheduling for care facilities and self-organized worker groups.
 See **[Shifthub Master Plan.md](./Shifthub%20Master%20Plan.md)** for scope, data model and roadmap.
 
-**Status:** Database phases D1–D3 done with API endpoints: organizations & onboarding; sites, areas, assignments, shift templates, availability; shifts with draft/publish, copy week, schedule sharing. Web/mobile are scaffolds; UI starts in W1.
+**Status:** Database phases D1–D3 done with API endpoints: organizations & onboarding; sites, areas, assignments, shift templates, availability; shifts with draft/publish, copy week, schedule sharing. Web portal W1 done: login, onboarding, invite accept, dashboard, employees, locations, shift templates, settings. Mobile is a scaffold.
 
 ## Structure
 
@@ -32,9 +32,13 @@ pnpm dev:api                           # http://localhost:8787/docs
 TOKEN=$(pnpm -s --filter @shifthub/api token admin@maplegrove.test)
 curl -H "Authorization: Bearer $TOKEN" http://localhost:8787/v1/me
 
-pnpm dev:web                           # http://localhost:3000
+pnpm dev:web                           # http://localhost:3000 — sign in with any seed email (dev login)
 pnpm dev:mobile                        # Expo
 ```
+
+### Dev login (local only)
+With `DEV_LOGIN=true` in `apps/api/.env` and `NEXT_PUBLIC_AUTH_MODE=dev` (the default) in the web app, you sign in with
+just an email — no password, no Supabase project needed. The API refuses to enable this when `NODE_ENV=production`.
 
 ### Seed users (local only)
 | Email | Org | Role |

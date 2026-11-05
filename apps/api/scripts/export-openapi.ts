@@ -3,7 +3,12 @@ import { writeFileSync } from 'node:fs';
 import { createApp } from '../src/app';
 
 const app = createApp({
-  db: { asUser: async () => { throw new Error('no db'); }, ping: async () => true, close: async () => {} },
+  db: {
+    asUser: async () => { throw new Error('no db'); },
+    ping: async () => true,
+    findProfileIdByEmail: async () => null,
+    close: async () => {},
+  },
   verifyToken: async () => { throw new Error('no auth'); },
 });
 const res = await app.request('/openapi.json');

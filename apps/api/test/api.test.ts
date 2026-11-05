@@ -161,3 +161,9 @@ describe('organization & members', () => {
     expect(res.body.inviteCode).not.toBe('OWLS000002');
   });
 });
+
+describe('dev login', () => {
+  it('is not mounted unless enabled', async () => {
+    expect((await call('POST', '/dev/token', undefined, { email: 'a@b.co' })).status).toBe(404);
+  });
+});

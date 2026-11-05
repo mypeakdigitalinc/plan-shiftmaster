@@ -1,24 +1,25 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
-import { api } from '@/lib/api';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+import { Spinner } from '@/components/ui';
+import { useSession } from '@/lib/session';
 
 export default function Home() {
-  const health = useQuery({ queryKey: ['health'], queryFn: api.health, retry: false });
+  const { session, me, meError } = useSession();
+  const router = useRouter();
 
-  return (
-    <main className="mx-auto max-w-2xl px-4 py-16">
-      <h1 className="text-3xl font-semibold text-brand">ShiftHub Admin</h1>
-      <p className="mt-2 text-slate-600">Scheduling for care facilities and worker groups.</p>
-      <div className="mt-8 rounded-lg border border-slate-200 bg-white p-4 text-sm">
-        API status:{' '}
-        {health.isPending ? 'checking…' : health.data?.ok ? (
-          <span className="font-medium text-emerald-700">connected</span>
-        ) : (
-          <span className="font-medium text-red-700">unreachable — start it with `pnpm dev:api`</span>
-        )}
-      </div>
-      <p className="mt-6 text-sm text-slate-500">Sign-in, locations and employee screens arrive in phase W1.</p>
-    </main>
-  );
+  useEffect(() => {
+    if (session === null) router.replace('/login');
+    else if (me) router.replace(me.organization ? '/dashboard' : '/onboarding');
+  }, [session, me, router]);
+
+  if (meError) {
+    return (
+      <main className="mx-auto max-w-md px-4 py-16 text-center text-sm text-red-700">
+        Could not reach the ShiftHub API. Is it running? (<code>pnpm dev:api</code>)
+      </main>
+    );
+  }
+  return <Spinner />;
 }

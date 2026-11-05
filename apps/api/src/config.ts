@@ -9,6 +9,7 @@ export type Config = {
   audience?: string;
   corsOrigins: string[];
   appUrl: string;
+  devLoginSecret?: string;
 };
 
 export function loadConfig(env: Record<string, string | undefined> = process.env): Config {
@@ -26,5 +27,7 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     audience: env.AUTH_AUDIENCE ?? 'authenticated',
     corsOrigins: (env.CORS_ORIGINS ?? 'http://localhost:3000').split(',').map((s) => s.trim()),
     appUrl: env.APP_URL ?? 'http://localhost:3000',
+    devLoginSecret:
+      env.DEV_LOGIN === 'true' && env.NODE_ENV !== 'production' && env.AUTH_JWT_SECRET ? env.AUTH_JWT_SECRET : undefined,
   };
 }

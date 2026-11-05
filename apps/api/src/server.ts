@@ -11,8 +11,10 @@ const app = createApp({
   verifyToken: createTokenVerifier(config),
   corsOrigins: config.corsOrigins,
   appUrl: config.appUrl,
+  devLoginSecret: config.devLoginSecret,
 });
 
 serve({ fetch: app.fetch, port: config.port }, (info) => {
   console.log(`ShiftHub API on http://localhost:${info.port}  (docs: /docs)`);
+  if (config.devLoginSecret) console.warn('DEV LOGIN ENABLED — POST /dev/token issues tokens for any email');
 });

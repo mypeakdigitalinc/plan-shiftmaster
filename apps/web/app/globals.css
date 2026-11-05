@@ -2,4 +2,10 @@
 
 @theme {
   --color-brand: #0f766e;
+  --color-brand-dark: #115e59;
+  --color-brand-light: #ccfbf1;
+}
+
+body {
+  background: var(--color-slate-50);
 }
