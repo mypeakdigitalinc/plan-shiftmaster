@@ -3,7 +3,7 @@
 Multi-tenant shift scheduling for care facilities and self-organized worker groups.
 See **[Shifthub Master Plan.md](./Shifthub%20Master%20Plan.md)** for scope, data model and roadmap.
 
-**Status:** Database phases D1–D3 done with API endpoints: organizations & onboarding; sites, areas, assignments, shift templates, availability; shifts with draft/publish, copy week, schedule sharing. Web portal W1–W2 done: login, onboarding, invite accept, dashboard, employees, locations, shift templates, settings, and the weekly schedule (assign, copy last week, publish). Mobile is a scaffold.
+**Status:** Database phases D1–D4 done with API endpoints: organizations & onboarding; sites, areas, assignments, shift templates, availability; shifts with draft/publish, copy week, schedule sharing; shift marketplace (give away / pick up) and swaps with manager approval or auto-approve. Web portal W1–W2 done: login, onboarding, invite accept, dashboard, employees, locations, shift templates, settings, and the weekly schedule (assign, copy last week, publish). Mobile is a scaffold.
 
 ## Structure
 

@@ -36,7 +36,7 @@ type Fragment = any;
 const MAX_RANGE_DAYS = 62;
 const daysBetween = (from: string, to: string) => (Date.parse(to) - Date.parse(from)) / 86_400_000;
 
-function selectShifts(tx: Tx, where: Fragment) {
+export function selectShifts(tx: Tx, where: Fragment) {
   return tx`
     select s.*, p.name as employee_name, z.tz,
            to_char(s.starts_at at time zone z.tz, 'YYYY-MM-DD') as local_date,

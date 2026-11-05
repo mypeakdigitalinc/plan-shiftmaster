@@ -89,8 +89,8 @@ as $$
                    where organization_id = app.current_org_id()), false)
 $$;
 
--- Can this employee work this area/assignment? (approved area + required position)
-create or replace function app.is_eligible(p_employee_id uuid, p_area_id uuid, p_assignment_id uuid)
+-- May this employee work in this area? Approved areas in facility mode; any area in group mode.
+create or replace function app.can_work_area(p_employee_id uuid, p_area_id uuid)
 returns boolean
 language sql
 stable
@@ -98,6 +98,19 @@ security definer
 set search_path = app, pg_temp
 as $$
   select exists (select 1 from app.employee_areas where employee_id = p_employee_id and area_id = p_area_id)
+      or exists (select 1 from app.areas a join app.org_settings s on s.organization_id = a.organization_id
+                 where a.id = p_area_id and s.mode = 'group')
+$$;
+
+-- Can this employee work this area/assignment? (area + required position)
+create or replace function app.is_eligible(p_employee_id uuid, p_area_id uuid, p_assignment_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = app, pg_temp
+as $$
+  select app.can_work_area(p_employee_id, p_area_id)
      and coalesce((
        select x.required_position is null or x.required_position = p.position
        from app.assignments x, app.profiles p
@@ -151,7 +164,7 @@ begin
   if new.employee_id is distinct from v_actor
      and (tg_op = 'INSERT' or new.employee_id is distinct from old.employee_id
           or new.area_id is distinct from old.area_id or new.assignment_id is distinct from old.assignment_id) then
-    if not exists (select 1 from app.employee_areas where employee_id = new.employee_id and area_id = new.area_id) then
+    if not app.can_work_area(new.employee_id, new.area_id) then
       raise exception 'employee is not approved to work in this area' using errcode = '22023';
     end if;
     if not app.is_eligible(new.employee_id, new.area_id, new.assignment_id) then
@@ -357,6 +370,7 @@ grant execute on function
   app.area_timezone(uuid),
   app.local_range(date, time, time, text),
   app.shares_schedule(uuid),
+  app.can_work_area(uuid, uuid),
   app.is_eligible(uuid, uuid, uuid),
   app.self_scheduling_enabled(),
   app.publish_shifts(date, date, uuid),

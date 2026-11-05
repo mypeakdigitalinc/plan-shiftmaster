@@ -355,3 +355,85 @@ export const copyWeekInput = z.object({
 export type CopyWeekInput = z.input<typeof copyWeekInput>;
 
 export * from './schedule';
+
+// =====================================================================
+// D4 — Marketplace & swaps
+// =====================================================================
+
+export const offerStatus = z.enum(['open', 'filled', 'cancelled', 'expired']);
+export const requestStatus = z.enum(['pending', 'approved', 'rejected', 'withdrawn']);
+export const swapStatus = z.enum(['pending_peer', 'pending_manager', 'approved', 'rejected', 'declined', 'cancelled']);
+export type OfferStatus = z.infer<typeof offerStatus>;
+export type RequestStatus = z.infer<typeof requestStatus>;
+export type SwapStatus = z.infer<typeof swapStatus>;
+
+const personRef = z.object({ id: z.guid(), name: z.string(), position: z.string().nullable() });
+export type PersonRef = z.infer<typeof personRef>;
+
+export const offer = z.object({
+  id: z.guid(),
+  status: offerStatus,
+  reason: z.string().nullable(),
+  expiresAt: z.string(),
+  createdAt: z.string(),
+  /** null = posted by a manager (open slot) */
+  offeredBy: personRef.nullable(),
+  shift: shift,
+  /** For the caller: can they take it (area + position) and are they free? */
+  eligible: z.boolean(),
+  conflict: z.boolean(),
+  myRequest: z.object({ id: z.guid(), status: requestStatus }).nullable(),
+  /** Pending requests (visible to managers and the offerer; 0 otherwise). */
+  pendingRequests: z.number().int(),
+});
+export type Offer = z.infer<typeof offer>;
+
+export const offerRequest = z.object({
+  id: z.guid(),
+  offerId: z.guid(),
+  status: requestStatus,
+  note: z.string().nullable(),
+  createdAt: z.string(),
+  decidedAt: z.string().nullable(),
+  employee: personRef,
+});
+export type OfferRequest = z.infer<typeof offerRequest>;
+
+export const swap = z.object({
+  id: z.guid(),
+  status: swapStatus,
+  note: z.string().nullable(),
+  createdAt: z.string(),
+  peerRespondedAt: z.string().nullable(),
+  decidedAt: z.string().nullable(),
+  requester: personRef,
+  target: personRef,
+  requesterShift: shift.nullable(),
+  targetShift: shift.nullable(),
+});
+export type Swap = z.infer<typeof swap>;
+
+export const myTrades = z.object({
+  offers: z.array(offer),
+  requests: z.array(offerRequest.extend({ offer: offer.nullable() })),
+  swaps: z.array(swap),
+});
+export type MyTrades = z.infer<typeof myTrades>;
+
+export const approvals = z.object({
+  pickups: z.array(offerRequest.extend({ offer: offer })),
+  swaps: z.array(swap),
+});
+export type Approvals = z.infer<typeof approvals>;
+
+export const createOfferInput = z.object({ shiftId: z.guid(), reason: z.string().trim().max(300).nullable().optional() });
+export const requestOfferInput = z.object({ note: z.string().trim().max(300).nullable().optional() });
+export const decisionInput = z.object({ approve: z.boolean() });
+export const createSwapInput = z.object({
+  myShiftId: z.guid(),
+  theirShiftId: z.guid(),
+  note: z.string().trim().max(300).nullable().optional(),
+});
+export const swapResponseInput = z.object({ accept: z.boolean() });
+export type CreateOfferInput = z.input<typeof createOfferInput>;
+export type CreateSwapInput = z.input<typeof createSwapInput>;

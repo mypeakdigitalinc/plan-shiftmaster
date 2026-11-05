@@ -4,6 +4,13 @@
  */
 import type {
   ApiError,
+  Approvals,
+  CreateOfferInput,
+  CreateSwapInput,
+  MyTrades,
+  Offer,
+  OfferRequest,
+  Swap,
   Area,
   Assignment,
   AvailabilitySlot,
@@ -134,6 +141,29 @@ export function createApiClient({ baseUrl, getAccessToken, fetch: f = fetch }: A
       publish: (input: PublishShiftsInput) => request<{ published: number }>('POST', '/v1/shifts/publish', input),
       copyWeek: (input: CopyWeekInput) =>
         request<{ copied: number; unassigned: number }>('POST', '/v1/shifts/copy-week', input),
+    },
+    marketplace: {
+      list: (opts: { eligibleOnly?: boolean } = {}) =>
+        request<Offer[]>('GET', `/v1/marketplace${opts.eligibleOnly ? '?eligibleOnly=true' : ''}`),
+      offer: (input: CreateOfferInput) => request<Offer>('POST', '/v1/offers', input),
+      cancelOffer: (offerId: string) => request<void>('DELETE', `/v1/offers/${offerId}`),
+      requests: (offerId: string) => request<OfferRequest[]>('GET', `/v1/offers/${offerId}/requests`),
+      requestShift: (offerId: string, note?: string) =>
+        request<OfferRequest>('POST', `/v1/offers/${offerId}/requests`, { note: note ?? null }),
+      withdraw: (requestId: string) => request<void>('DELETE', `/v1/offer-requests/${requestId}`),
+      decide: (requestId: string, approve: boolean) =>
+        request<OfferRequest>('POST', `/v1/offer-requests/${requestId}/decision`, { approve }),
+    },
+    swaps: {
+      list: (scope: 'mine' | 'org' = 'mine') => request<Swap[]>('GET', `/v1/swaps?scope=${scope}`),
+      propose: (input: CreateSwapInput) => request<Swap>('POST', '/v1/swaps', input),
+      respond: (swapId: string, accept: boolean) => request<Swap>('POST', `/v1/swaps/${swapId}/response`, { accept }),
+      decide: (swapId: string, approve: boolean) => request<Swap>('POST', `/v1/swaps/${swapId}/decision`, { approve }),
+      cancel: (swapId: string) => request<void>('DELETE', `/v1/swaps/${swapId}`),
+    },
+    trades: {
+      mine: () => request<MyTrades>('GET', '/v1/me/trades'),
+      approvals: () => request<Approvals>('GET', '/v1/approvals'),
     },
     shiftTemplates: {
       list: () => request<ShiftTemplate[]>('GET', '/v1/shift-templates'),
