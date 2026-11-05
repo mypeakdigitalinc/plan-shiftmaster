@@ -4,6 +4,20 @@
  */
 import type {
   ApiError,
+  Area,
+  Assignment,
+  AvailabilitySlot,
+  CreateAreaInput,
+  CreateAssignmentInput,
+  CreateShiftTemplateInput,
+  CreateSiteInput,
+  Locations,
+  ShiftTemplate,
+  Site,
+  UpdateAreaInput,
+  UpdateAssignmentInput,
+  UpdateShiftTemplateInput,
+  UpdateSiteInput,
   CreateInvitationInput,
   CreateOrganizationInput,
   Invitation,
@@ -59,6 +73,9 @@ export function createApiClient({ baseUrl, getAccessToken, fetch: f = fetch }: A
     me: {
       get: () => request<Me>('GET', '/v1/me'),
       update: (input: UpdateMeInput) => request<Profile>('PATCH', '/v1/me', input),
+      availability: () => request<{ slots: AvailabilitySlot[] }>('GET', '/v1/me/availability'),
+      setAvailability: (slots: AvailabilitySlot[]) =>
+        request<{ slots: AvailabilitySlot[] }>('PUT', '/v1/me/availability', { slots }),
     },
     onboarding: {
       createOrganization: (input: CreateOrganizationInput) => request<Me>('POST', '/v1/organizations', input),
@@ -76,6 +93,30 @@ export function createApiClient({ baseUrl, getAccessToken, fetch: f = fetch }: A
     members: {
       list: () => request<Profile[]>('GET', '/v1/members'),
       update: (id: string, input: UpdateMemberInput) => request<Profile>('PATCH', `/v1/members/${id}`, input),
+      areas: (id: string) => request<{ areaIds: string[] }>('GET', `/v1/members/${id}/areas`),
+      setAreas: (id: string, areaIds: string[]) =>
+        request<{ areaIds: string[] }>('PUT', `/v1/members/${id}/areas`, { areaIds }),
+      availability: (id: string) => request<{ slots: AvailabilitySlot[] }>('GET', `/v1/members/${id}/availability`),
+    },
+    locations: {
+      list: () => request<Locations>('GET', '/v1/locations'),
+      createSite: (input: CreateSiteInput) => request<Site>('POST', '/v1/sites', input),
+      updateSite: (id: string, input: UpdateSiteInput) => request<Site>('PATCH', `/v1/sites/${id}`, input),
+      deleteSite: (id: string) => request<void>('DELETE', `/v1/sites/${id}`),
+      createArea: (input: CreateAreaInput) => request<Area>('POST', '/v1/areas', input),
+      updateArea: (id: string, input: UpdateAreaInput) => request<Area>('PATCH', `/v1/areas/${id}`, input),
+      deleteArea: (id: string) => request<void>('DELETE', `/v1/areas/${id}`),
+      createAssignment: (input: CreateAssignmentInput) => request<Assignment>('POST', '/v1/assignments', input),
+      updateAssignment: (id: string, input: UpdateAssignmentInput) =>
+        request<Assignment>('PATCH', `/v1/assignments/${id}`, input),
+      deleteAssignment: (id: string) => request<void>('DELETE', `/v1/assignments/${id}`),
+    },
+    shiftTemplates: {
+      list: () => request<ShiftTemplate[]>('GET', '/v1/shift-templates'),
+      create: (input: CreateShiftTemplateInput) => request<ShiftTemplate>('POST', '/v1/shift-templates', input),
+      update: (id: string, input: UpdateShiftTemplateInput) =>
+        request<ShiftTemplate>('PATCH', `/v1/shift-templates/${id}`, input),
+      remove: (id: string) => request<void>('DELETE', `/v1/shift-templates/${id}`),
     },
     invitations: {
       list: () => request<Invitation[]>('GET', '/v1/invitations'),

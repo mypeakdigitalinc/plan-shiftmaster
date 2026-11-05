@@ -25,8 +25,10 @@ export function toHttpError(err: unknown): HttpError {
       case '22P02':
       case '23514':
         return new HttpError(400, 'bad_request', msg);
+      case '23503':
+        return new HttpError(400, 'bad_request', 'A referenced item does not exist in your organization');
       case '23505':
-        return new HttpError(409, 'conflict', 'Already exists');
+        return new HttpError(409, 'conflict', 'An item with that name already exists');
       case '55000':
         return new HttpError(409, 'conflict', msg);
     }

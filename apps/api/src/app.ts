@@ -3,7 +3,6 @@ import { Scalar } from '@scalar/hono-api-reference';
 import { cors } from 'hono/cors';
 import {
   acceptInvitationInput,
-  apiError,
   createInvitationInput,
   createOrganizationInput,
   invitation,
@@ -20,9 +19,21 @@ import {
 import { AuthError, type AuthUser, type VerifyToken } from './auth';
 import type { Db, Tx } from './db';
 import { HttpError, toHttpError } from './errors';
+import {
+  assertTimezone,
+  body,
+  errors,
+  idParam,
+  isManager,
+  json,
+  requireOrg,
+  secured,
+  snake,
+  type Env,
+  type Run,
+} from './http';
 import { toInvitation, toOrganization, toProfile } from './mappers';
-
-type Env = { Variables: { user: AuthUser } };
+import { registerStructureRoutes } from './routes/structure';
 
 export type AppDeps = {
   db: Db;
@@ -30,24 +41,6 @@ export type AppDeps = {
   corsOrigins?: string[];
   appUrl?: string;
 };
-
-// ---------- route helpers ----------
-const json = <T extends z.ZodType>(schema: T, description: string) => ({
-  content: { 'application/json': { schema } },
-  description,
-});
-const body = <T extends z.ZodType>(schema: T) => ({
-  body: { content: { 'application/json': { schema } }, required: true },
-});
-const errors = {
-  400: json(apiError, 'Invalid input'),
-  401: json(apiError, 'Missing or invalid token'),
-  403: json(apiError, 'Not allowed'),
-  404: json(apiError, 'Not found'),
-  409: json(apiError, 'Conflict'),
-};
-const secured = [{ bearerAuth: [] }];
-const idParam = z.object({ id: z.uuid() });
 
 // ---------- shared queries ----------
 async function loadOrganization(tx: Tx): Promise<Organization | null> {
@@ -64,25 +57,6 @@ async function loadOrganization(tx: Tx): Promise<Organization | null> {
 async function loadMe(tx: Tx) {
   const [p] = await tx`select * from app.ensure_profile()`;
   return { profile: toProfile(p!), organization: await loadOrganization(tx) };
-}
-
-async function requireOrg(tx: Tx) {
-  const [row] = await tx`select app.current_org_id() as org`;
-  if (!row?.org) throw new HttpError(409, 'no_organization', 'Create or join an organization first');
-  return row.org as string;
-}
-
-const snake = (o: Record<string, unknown>) =>
-  Object.fromEntries(
-    Object.entries(o)
-      .filter(([, v]) => v !== undefined)
-      .map(([k, v]) => [k.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`), v]),
-  );
-
-async function assertTimezone(tx: Tx, tz: string | undefined) {
-  if (!tz) return;
-  const [row] = await tx`select 1 from pg_timezone_names where name = ${tz}`;
-  if (!row) throw new HttpError(400, 'bad_request', `Unknown timezone ${tz}`);
 }
 
 // ---------- app ----------
@@ -118,7 +92,7 @@ export function createApp(deps: AppDeps) {
     bearerFormat: 'JWT',
   });
 
-  const run = <T>(c: { get: (k: 'user') => AuthUser }, fn: (tx: Tx) => Promise<T>) => deps.db.asUser(c.get('user'), fn);
+  const run: Run = (c, fn) => deps.db.asUser(c.get('user'), fn);
 
   // ----- health -----
   app.openapi(
@@ -326,16 +300,23 @@ export function createApp(deps: AppDeps) {
       method: 'get',
       path: '/v1/members',
       tags: ['Members'],
-      summary: 'People in my organization',
+      summary: 'People in my organization (email/phone hidden from employees)',
       security: secured,
-      responses: { 200: json(z.array(profile), 'Members'), 401: errors[401], 409: errors[409] },
+      responses: { 200: json(z.array(profile.extend({ email: z.string().nullable() })), 'Members'), 401: errors[401], 409: errors[409] },
     }),
     async (c) => {
-      const rows = await run(c, async (tx) => {
+      const me = c.get('user').sub;
+      const { rows, manager } = await run(c, async (tx) => {
         const orgId = await requireOrg(tx);
-        return tx`select * from app.profiles where organization_id = ${orgId} and deleted_at is null order by name`;
+        return {
+          manager: await isManager(tx),
+          rows: await tx`select * from app.profiles where organization_id = ${orgId} and deleted_at is null order by name`,
+        };
       });
-      return c.json(rows.map(toProfile), 200);
+      // Employees don't see coworkers' contact details
+      const hide = (p: ReturnType<typeof toProfile>) =>
+        manager || p.id === me ? p : { ...p, email: null, phone: null };
+      return c.json(rows.map((r) => hide(toProfile(r))), 200);
     },
   );
 
@@ -439,6 +420,8 @@ export function createApp(deps: AppDeps) {
       return c.body(null, 204);
     },
   );
+
+  registerStructureRoutes(app, run);
 
   // ----- docs -----
   app.doc31('/openapi.json', {

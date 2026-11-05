@@ -66,4 +66,63 @@ insert into app.invitations (organization_id, email, role, position, token) valu
   ('00000000-0000-4000-a000-000000000001', 'newhire@maplegrove.test', 'employee', 'PSW',
    'dev-invite-token-newhire');
 
+-- ---------------------------------------------------------------------------
+-- D2: structure. Maple Grove: 1 site, 3 units, 7 positions per unit.
+-- ---------------------------------------------------------------------------
+insert into app.sites (id, organization_id, name, code, address, phone) values
+  ('00000000-0000-4000-d000-000000000001', '00000000-0000-4000-a000-000000000001',
+   'Maple Grove — Main Building', 'MG', '100 Example Ave, Toronto, ON', '555-0100'),
+  ('00000000-0000-4000-d000-000000000002', '00000000-0000-4000-a000-000000000002',
+   'Lakeside Hospital', 'LH', null, null);
+
+insert into app.areas (id, organization_id, site_id, name, description) values
+  ('00000000-0000-4000-e000-000000000001', '00000000-0000-4000-a000-000000000001',
+   '00000000-0000-4000-d000-000000000001', 'Birch Unit', 'Long-term care, 32 beds'),
+  ('00000000-0000-4000-e000-000000000002', '00000000-0000-4000-a000-000000000001',
+   '00000000-0000-4000-d000-000000000001', 'Cedar Unit', 'Memory care, 24 beds'),
+  ('00000000-0000-4000-e000-000000000003', '00000000-0000-4000-a000-000000000001',
+   '00000000-0000-4000-d000-000000000001', 'Willow Unit', 'Convalescent care, 20 beds'),
+  ('00000000-0000-4000-e000-000000000004', '00000000-0000-4000-a000-000000000002',
+   '00000000-0000-4000-d000-000000000002', 'Night Float', 'Shared night shifts');
+
+insert into app.assignments (organization_id, area_id, name, code, required_position, display_order)
+select a.organization_id, a.id, p.name, p.code, p.req, p.ord
+from app.areas a
+cross join (values
+  ('Charge Nurse', 'RN',   'RN',  1),
+  ('Med Pass 1',   'MED1', 'RPN', 2),
+  ('Med Pass 2',   'MED2', 'RPN', 3),
+  ('PSW 1',        'PSW1', 'PSW', 4),
+  ('PSW 2',        'PSW2', 'PSW', 5),
+  ('PSW 3',        'PSW3', 'PSW', 6),
+  ('PSW 4',        'PSW4', 'PSW', 7)
+) as p(name, code, req, ord)
+where a.organization_id = '00000000-0000-4000-a000-000000000001';
+
+insert into app.assignments (organization_id, area_id, name, code, required_position, display_order) values
+  ('00000000-0000-4000-a000-000000000002', '00000000-0000-4000-e000-000000000004', 'Float PSW 1', 'F1', 'PSW', 1),
+  ('00000000-0000-4000-a000-000000000002', '00000000-0000-4000-e000-000000000004', 'Float PSW 2', 'F2', 'PSW', 2);
+
+-- Staff spread across units round-robin; managers + admin cover every unit
+insert into app.employee_areas (organization_id, employee_id, area_id)
+select p.organization_id, p.id,
+       ('00000000-0000-4000-e000-' || lpad((1 + (row_number() over (order by p.id)) % 3)::text, 12, '0'))::uuid
+from app.profiles p
+where p.organization_id = '00000000-0000-4000-a000-000000000001' and p.role = 'employee';
+
+insert into app.employee_areas (organization_id, employee_id, area_id)
+select p.organization_id, p.id, a.id
+from app.profiles p
+join app.areas a on a.organization_id = p.organization_id
+where p.organization_id = '00000000-0000-4000-a000-000000000001' and p.role in ('manager', 'org_admin');
+
+insert into app.employee_areas (organization_id, employee_id, area_id)
+select organization_id, id, '00000000-0000-4000-e000-000000000004'
+from app.profiles where organization_id = '00000000-0000-4000-a000-000000000002';
+
+-- Sample availability: staff1 can't work Sundays or Wednesday evenings
+insert into app.availability (organization_id, employee_id, weekday, start_time, end_time, note) values
+  ('00000000-0000-4000-a000-000000000001', '00000000-0000-4000-b000-000000000006', 0, '00:00', '24:00', 'Family day'),
+  ('00000000-0000-4000-a000-000000000001', '00000000-0000-4000-b000-000000000006', 3, '15:00', '24:00', 'Class');
+
 commit;

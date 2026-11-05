@@ -1,48 +1,16 @@
-import { randomUUID } from 'node:crypto';
-import { createTestDatabase, seedIds as ids } from '@shifthub/db/testing';
-import { SignJWT } from 'jose';
+import { seedIds as ids } from '@shifthub/db/testing';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { createApp } from '../src/app';
-import { createTokenVerifier } from '../src/auth';
-import { createDb, type Db } from '../src/db';
+import { newUser, setupApi, signToken } from './helpers';
 
-const SECRET = 'test-secret-test-secret-test-secret-123';
-const DB_NAME = 'shifthub_test_api';
-const baseUrl = process.env.TEST_DATABASE_URL ?? 'postgresql://postgres:postgres@localhost:5432';
-
-let db: Db;
-let app: ReturnType<typeof createApp>;
+let api: Awaited<ReturnType<typeof setupApi>>;
+const call = (...args: Parameters<typeof api.call>) => api.call(...args);
 
 beforeAll(async () => {
-  const setup = await createTestDatabase(DB_NAME, { seed: true });
-  await setup.end();
-  db = createDb(`${baseUrl}/${DB_NAME}`, { max: 3 });
-  app = createApp({ db, verifyToken: createTokenVerifier({ jwtSecret: SECRET, audience: 'authenticated' }) });
+  api = await setupApi('shifthub_test_api');
 });
 afterAll(async () => {
-  await db?.close();
+  await api?.close();
 });
-
-const token = (u: { sub: string; email: string }, secret = SECRET) =>
-  new SignJWT({ email: u.email, role: 'authenticated' })
-    .setProtectedHeader({ alg: 'HS256' })
-    .setSubject(u.sub)
-    .setAudience('authenticated')
-    .setExpirationTime('5m')
-    .sign(new TextEncoder().encode(secret));
-
-async function call(method: string, path: string, user?: { sub: string; email: string }, body?: unknown) {
-  const headers: Record<string, string> = { 'content-type': 'application/json' };
-  if (user) headers.authorization = `Bearer ${await token(user)}`;
-  const res = await app.request(path, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
-  const text = await res.text();
-  return { status: res.status, body: text ? JSON.parse(text) : null };
-}
-
-const newUser = () => {
-  const sub = randomUUID();
-  return { sub, email: `${sub.slice(0, 8)}@example.test` };
-};
 
 describe('auth', () => {
   it('rejects requests without a token', async () => {
@@ -52,8 +20,8 @@ describe('auth', () => {
   });
 
   it('rejects tokens signed with the wrong secret', async () => {
-    const bad = await token(ids.staffA1, 'some-other-secret-some-other-secret-1');
-    const res = await app.request('/v1/me', { headers: { authorization: `Bearer ${bad}` } });
+    const bad = await signToken(ids.staffA1, 'some-other-secret-some-other-secret-1');
+    const res = await api.app.request('/v1/me', { headers: { authorization: `Bearer ${bad}` } });
     expect(res.status).toBe(401);
   });
 
@@ -61,7 +29,7 @@ describe('auth', () => {
     expect((await call('GET', '/health')).body).toEqual({ ok: true });
     const spec = await call('GET', '/openapi.json');
     expect(spec.body.paths['/v1/me']).toBeDefined();
-    expect((await app.request('/docs')).status).toBe(200);
+    expect((await api.app.request('/docs')).status).toBe(200);
   });
 });
 
