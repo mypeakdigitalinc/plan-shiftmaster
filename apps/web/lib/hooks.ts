@@ -12,6 +12,8 @@ export const keys = {
   templates: ['shift-templates'] as const,
   organization: ['organization'] as const,
   shifts: ['shifts'] as const,
+  approvals: ['approvals'] as const,
+  marketplace: ['marketplace'] as const,
 };
 
 export const useMembers = () => useQuery({ queryKey: keys.members, queryFn: () => api.members.list() });
@@ -44,3 +46,10 @@ export function useApiMutation<TVars, TResult>(fn: (vars: TVars) => Promise<TRes
     onSuccess: () => Promise.all(invalidate.map((queryKey) => qc.invalidateQueries({ queryKey }))),
   });
 }
+
+export const useApprovals = (enabled = true) =>
+  useQuery({ queryKey: keys.approvals, queryFn: api.trades.approvals, enabled, refetchInterval: 60_000 });
+export const useMarketplace = () => useQuery({ queryKey: keys.marketplace, queryFn: () => api.marketplace.list() });
+
+/** Everything a trade decision can change. */
+export const tradeKeys = [keys.approvals, keys.marketplace, keys.shifts];

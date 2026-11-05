@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Badge, Card, PageHeader } from '@/components/ui';
-import { useLocations, useMembers, useTemplates } from '@/lib/hooks';
+import { useApprovals, useLocations, useMarketplace, useMembers, useTemplates } from '@/lib/hooks';
 import { useSession } from '@/lib/session';
 
 function Stat({ label, value, href }: { label: string; value: number | string; href: string }) {
@@ -21,6 +21,9 @@ export default function DashboardPage() {
   const members = useMembers();
   const locations = useLocations();
   const templates = useTemplates();
+  const approvals = useApprovals();
+  const market = useMarketplace();
+  const waiting = (approvals.data?.pickups.length ?? 0) + (approvals.data?.swaps.length ?? 0);
   const org = me!.organization!;
 
   const areas = locations.data?.flatMap((s) => s.areas) ?? [];
@@ -40,6 +43,11 @@ export default function DashboardPage() {
         <Stat label="Shift templates" value={templates.isPending ? '…' : (templates.data?.length ?? 0)} href="/templates" />
       </div>
 
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <Stat label="Waiting for approval" value={approvals.isPending ? '…' : waiting} href="/approvals" />
+        <Stat label="Shifts on the marketplace" value={market.isPending ? '…' : (market.data?.length ?? 0)} href="/approvals" />
+      </div>
+
       <Card className="mt-6 p-5">
         <h2 className="text-sm font-semibold">Scheduling rules</h2>
         <div className="mt-3 flex flex-wrap gap-2">
@@ -52,9 +60,6 @@ export default function DashboardPage() {
             Self-scheduling {org.settings.allowSelfScheduling ? 'on' : 'off'}
           </Badge>
         </div>
-        <p className="mt-4 text-sm text-slate-500">
-          Coverage and pending approvals appear here once the schedule and approval screens ship (W2–W4).
-        </p>
       </Card>
     </>
   );

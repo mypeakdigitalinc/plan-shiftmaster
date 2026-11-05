@@ -25,6 +25,7 @@ import {
   useAreaMembers,
   useLocations,
   useShifts,
+  useMarketplace,
   useTemplates,
 } from '@/lib/hooks';
 import { useSession } from '@/lib/session';
@@ -61,6 +62,8 @@ function ScheduleView() {
 
   // Fetch a day either side so overnight / cross-area overlaps are visible to the editor
   const shifts = useShifts(addDays(monday, -1), addDays(monday, 7));
+  const market = useMarketplace();
+  const offersByShift = useMemo(() => new Map((market.data ?? []).map((o) => [o.shift.id, o])), [market.data]);
   const members = useAreaMembers(areaId);
   const availability = useAreaAvailability(areaId);
 
@@ -228,7 +231,7 @@ function ScheduleView() {
                             <button
                               key={s.id}
                               onClick={() => openEditor(s, row, d)}
-                              title={`${s.startTime}–${s.endTime}${s.notes ? ` · ${s.notes}` : ''}`}
+                              title={`${s.startTime}–${s.endTime}${s.notes ? ` · ${s.notes}` : ''}${offersByShift.has(s.id) ? ' · on the marketplace' : ''}`}
                               className={cn(
                                 'truncate rounded border px-1.5 py-1 text-left text-xs',
                                 s.status === 'cancelled' && 'border-slate-200 bg-slate-50 text-slate-400 line-through',
@@ -237,6 +240,11 @@ function ScheduleView() {
                                 s.status === 'published' && !s.employeeId && 'border-red-200 bg-red-50 font-medium text-red-700',
                               )}
                             >
+                              {offersByShift.has(s.id) && (
+                                <span className="mr-1 text-sky-600" aria-label="on the marketplace">
+                                  ↗
+                                </span>
+                              )}
                               {s.employeeId ? firstName(s.employeeName) : 'Open'}
                               {!row.template && <span className="ml-1 opacity-70">{s.startTime}</span>}
                             </button>
@@ -263,7 +271,7 @@ function ScheduleView() {
       {shifts.isFetching && <p className="mt-2 text-xs text-slate-400">Refreshing…</p>}
 
       <p className="mt-3 text-xs text-slate-500">
-        Dashed = draft (staff can’t see it yet) · Green = published · Red = open slot · Times in {timezone}
+        Dashed = draft (staff can’t see it yet) · Green = published · Red = open slot · ↗ = on the marketplace · Times in {timezone}
       </p>
 
       {editing && area && (
@@ -275,6 +283,7 @@ function ScheduleView() {
           members={members.data ?? []}
           availability={availabilityMap}
           weekShifts={allShifts}
+          offer={editing.shift ? offersByShift.get(editing.shift.id) : undefined}
           hoursByEmployee={hoursByEmployee}
           timezone={timezone}
           onClose={() => setEditing(null)}

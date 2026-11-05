@@ -6,6 +6,7 @@ import {
   rangesOverlap,
   type Assignment,
   type AvailabilitySlot,
+  type Offer,
   type Profile,
   type Shift,
   type ShiftTemplate,
@@ -13,7 +14,8 @@ import {
 import { useMemo, useState } from 'react';
 import { Badge, Button, ErrorText, Field, Input, Modal, Select } from '@/components/ui';
 import { api } from '@/lib/api';
-import { keys, useApiMutation } from '@/lib/hooks';
+import Link from 'next/link';
+import { keys, tradeKeys, useApiMutation } from '@/lib/hooks';
 
 export type ShiftDraft = {
   date: string;
@@ -45,6 +47,7 @@ export function ShiftModal({
   weekShifts,
   hoursByEmployee,
   timezone,
+  offer,
   onClose,
 }: {
   /** Existing shift being edited, or null for a new one built from `draft`. */
@@ -58,6 +61,8 @@ export function ShiftModal({
   hoursByEmployee: Map<string, number>;
   /** Area timezone, for converting local times to instants. */
   timezone: string;
+  /** Open marketplace offer for this shift, if any. */
+  offer?: Offer;
   onClose: () => void;
 }) {
   const [templateId, setTemplateId] = useState<string>(shift?.shiftTemplateId ?? draft.shiftTemplateId ?? '');
@@ -107,14 +112,14 @@ export function ShiftModal({
     const common = { assignmentId: assignmentId || null, employeeId: employeeId || null, notes: notes.trim() || null };
     if (shift) return api.shifts.update(shift.id, { ...common, ...times, date });
     return api.shifts.create({ areaId: draft.areaId, date, ...common, ...times });
-  }, [keys.shifts]);
+  }, tradeKeys);
 
   const remove = useApiMutation(
     async () => {
       if (shift!.status === 'draft') await api.shifts.remove(shift!.id);
       else await api.shifts.update(shift!.id, { status: 'cancelled' });
     },
-    [keys.shifts],
+    tradeKeys,
   );
 
   const label = (c: Candidate) => {
@@ -215,10 +220,52 @@ export function ShiftModal({
         </p>
       )}
 
+      {shift && <MarketplaceBox shift={shift} offer={offer} />}
+
       <Field label="Notes">
         <Input value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={500} />
       </Field>
       <ErrorText error={save.error ?? remove.error} />
     </Modal>
+  );
+}
+
+function MarketplaceBox({ shift, offer }: { shift: Shift; offer?: Offer }) {
+  const post = useApiMutation(() => api.marketplace.offer({ shiftId: shift.id }), tradeKeys);
+  const unpost = useApiMutation(() => api.marketplace.cancelOffer(offer!.id), tradeKeys);
+  const started = Date.parse(shift.startsAt) <= Date.now();
+  if (shift.status !== 'published' || started) return null;
+
+  return (
+    <div className="rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-sm">
+      {offer ? (
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span className="text-sky-900">
+            On the marketplace{offer.offeredBy ? ` (offered by ${offer.offeredBy.name})` : ''} ·{' '}
+            {offer.pendingRequests} request{offer.pendingRequests === 1 ? '' : 's'}
+          </span>
+          <span className="flex gap-1">
+            {offer.pendingRequests > 0 && (
+              <Link href="/approvals" className="rounded px-2 py-1 text-xs font-medium text-sky-800 hover:bg-sky-100">
+                Review
+              </Link>
+            )}
+            <Button size="sm" variant="ghost" disabled={unpost.isPending} onClick={() => unpost.mutate(undefined)}>
+              Take off
+            </Button>
+          </span>
+        </div>
+      ) : (
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span className="text-sky-900">
+            {shift.employeeId ? 'Let eligible staff request this shift.' : 'Post this open slot so eligible staff can request it.'}
+          </span>
+          <Button size="sm" variant="secondary" disabled={post.isPending} onClick={() => post.mutate(undefined)}>
+            Post to marketplace
+          </Button>
+        </div>
+      )}
+      <ErrorText error={post.error ?? unpost.error} />
+    </div>
   );
 }

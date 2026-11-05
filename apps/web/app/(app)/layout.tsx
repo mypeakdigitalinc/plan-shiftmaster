@@ -4,11 +4,13 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, type ReactNode } from 'react';
 import { Badge, Button, cn, Spinner } from '@/components/ui';
+import { useApprovals } from '@/lib/hooks';
 import { isManagerRole, useRequireOrg, useSession } from '@/lib/session';
 
 const NAV = [
   { href: '/dashboard', label: 'Dashboard' },
   { href: '/schedule', label: 'Schedule' },
+  { href: '/approvals', label: 'Approvals' },
   { href: '/employees', label: 'Employees' },
   { href: '/locations', label: 'Locations' },
   { href: '/templates', label: 'Shift templates' },
@@ -22,6 +24,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const { signOut } = useSession();
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+  const approvals = useApprovals(ready && isManagerRole(me?.profile.role));
+  const pending = (approvals.data?.pickups.length ?? 0) + (approvals.data?.swaps.length ?? 0);
 
   if (!ready || !me?.organization) return <Spinner />;
 
@@ -53,7 +57,14 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               active ? 'bg-brand-light/60 text-brand-dark' : 'text-slate-600 hover:bg-slate-100',
             )}
           >
-            {item.label}
+            <span className="flex items-center justify-between">
+              {item.label}
+              {item.href === '/approvals' && pending > 0 && (
+                <span className="rounded-full bg-amber-500 px-1.5 text-xs font-semibold text-white" aria-label={`${pending} pending`}>
+                  {pending}
+                </span>
+              )}
+            </span>
           </Link>
         );
       })}
