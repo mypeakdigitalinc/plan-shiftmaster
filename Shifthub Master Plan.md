@@ -223,7 +223,7 @@ Work runs in three parallel tracks: **Database → Web Portal → Mobile App**. 
 | Phase | Deliverables | Needs |
 |---|---|---|
 | **W1 Setup screens** (wk 2) ✅ done (+ settings, dev login) | Login, org onboarding (facility/group), Locations (sites → areas → assignments), Employees (invite, role, position, areas), Shift Templates | D1, D2 |
-| **W2 Schedule** (wk 3) | Week calendar by site/area, create/edit/assign shifts, availability shown, copy week, publish | D3 |
+| **W2 Schedule** (wk 3) ✅ done (click-to-assign; drag-and-drop post-MVP) | Week calendar by site/area, create/edit/assign shifts, availability shown, copy week, publish | D3 |
 | **W3 Approvals** (wk 4) | Pickup and swap approval queue, approve/reject with reason | D4 |
 | **W4 Settings & dashboard** (wk 5) | Org settings (approval rules, modes), dashboard (today's coverage, pending approvals), audit log view | D4, D5 |
 | **Tests** (wk 7) | Playwright: publish, approve pickup, approve swap | All |

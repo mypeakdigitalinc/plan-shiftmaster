@@ -3,7 +3,7 @@
 Multi-tenant shift scheduling for care facilities and self-organized worker groups.
 See **[Shifthub Master Plan.md](./Shifthub%20Master%20Plan.md)** for scope, data model and roadmap.
 
-**Status:** Database phases D1–D3 done with API endpoints: organizations & onboarding; sites, areas, assignments, shift templates, availability; shifts with draft/publish, copy week, schedule sharing. Web portal W1 done: login, onboarding, invite accept, dashboard, employees, locations, shift templates, settings. Mobile is a scaffold.
+**Status:** Database phases D1–D3 done with API endpoints: organizations & onboarding; sites, areas, assignments, shift templates, availability; shifts with draft/publish, copy week, schedule sharing. Web portal W1–W2 done: login, onboarding, invite accept, dashboard, employees, locations, shift templates, settings, and the weekly schedule (assign, copy last week, publish). Mobile is a scaffold.
 
 ## Structure
 
@@ -60,6 +60,8 @@ pnpm test        # needs Postgres; override with TEST_DATABASE_URL=postgresql://
 ```
 
 - `supabase/tests` — tenant isolation, role permissions, onboarding RPCs (RLS against real Postgres)
+- `packages/shared` — date/timezone/availability helpers
+- `apps/web/e2e` — browser smoke tests (run against a local seeded stack; see file headers)
 - `apps/api/test` — API integration tests (auth, onboarding, members, settings, locations, templates, availability, shifts)
 
 ## Deploying (when accounts exist)

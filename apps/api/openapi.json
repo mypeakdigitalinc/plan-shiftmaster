@@ -2080,6 +2080,19 @@
             "bearerAuth": []
           }
         ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Only people approved to work in this area"
+            },
+            "required": false,
+            "description": "Only people approved to work in this area",
+            "name": "areaId",
+            "in": "query"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Members",
@@ -2160,6 +2173,36 @@
                       "status"
                     ]
                   }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
                 }
               }
             }
@@ -6462,6 +6505,179 @@
           },
           "409": {
             "description": "Conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/availability": {
+      "get": {
+        "tags": [
+          "Members"
+        ],
+        "summary": "Weekly unavailable times for everyone approved in an area (Manager)",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "areaId",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Per employee",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "employeeId": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "slots": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "weekday": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 6,
+                              "description": "0 = Sunday"
+                            },
+                            "startTime": {
+                              "type": "string",
+                              "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+                            },
+                            "endTime": {
+                              "type": "string",
+                              "pattern": "^(([01]\\d|2[0-3]):[0-5]\\d|24:00)$"
+                            },
+                            "note": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "maxLength": 200
+                            }
+                          },
+                          "required": [
+                            "weekday",
+                            "startTime",
+                            "endTime"
+                          ]
+                        }
+                      }
+                    },
+                    "required": [
+                      "employeeId",
+                      "slots"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "code",
+                        "message"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed",
             "content": {
               "application/json": {
                 "schema": {

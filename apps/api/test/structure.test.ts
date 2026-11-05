@@ -162,3 +162,25 @@ describe('member privacy', () => {
     expect(asManager.body.find((p: { id: string }) => p.id === ids.staffA2.sub).email).toBe(ids.staffA2.email);
   });
 });
+
+describe('schedule helpers', () => {
+  it('filters members by area', async () => {
+    const res = await call('GET', `/v1/members?areaId=${ids.areaA1}`, ids.managerA);
+    expect(res.status).toBe(200);
+    expect(res.body.length).toBeGreaterThan(5);
+    expect(res.body.length).toBeLessThan(100);
+    for (const m of res.body.slice(0, 5)) {
+      const areas = await call('GET', `/v1/members/${m.id}/areas`, ids.managerA);
+      expect(areas.body.areaIds).toContain(ids.areaA1);
+    }
+  });
+
+  it('returns area availability for managers only', async () => {
+    const area = (await call('GET', `/v1/members/${ids.staffA1.sub}/areas`, ids.managerA)).body.areaIds[0];
+    const res = await call('GET', `/v1/availability?areaId=${area}`, ids.managerA);
+    expect(res.status).toBe(200);
+    const mine = res.body.find((r: { employeeId: string }) => r.employeeId === ids.staffA1.sub);
+    expect(mine.slots.length).toBeGreaterThan(0);
+    expect((await call('GET', `/v1/availability?areaId=${area}`, ids.staffA1)).status).toBe(403);
+  });
+});

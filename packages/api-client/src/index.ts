@@ -97,12 +97,15 @@ export function createApiClient({ baseUrl, getAccessToken, fetch: f = fetch }: A
       rotateInviteCode: () => request<{ inviteCode: string }>('POST', '/v1/organization/invite-code/rotate'),
     },
     members: {
-      list: () => request<Profile[]>('GET', '/v1/members'),
+      list: (params: { areaId?: string } = {}) =>
+        request<Profile[]>('GET', `/v1/members${params.areaId ? `?areaId=${params.areaId}` : ''}`),
       update: (id: string, input: UpdateMemberInput) => request<Profile>('PATCH', `/v1/members/${id}`, input),
       areas: (id: string) => request<{ areaIds: string[] }>('GET', `/v1/members/${id}/areas`),
       setAreas: (id: string, areaIds: string[]) =>
         request<{ areaIds: string[] }>('PUT', `/v1/members/${id}/areas`, { areaIds }),
       availability: (id: string) => request<{ slots: AvailabilitySlot[] }>('GET', `/v1/members/${id}/availability`),
+      areaAvailability: (areaId: string) =>
+        request<{ employeeId: string; slots: AvailabilitySlot[] }[]>('GET', `/v1/availability?areaId=${areaId}`),
     },
     locations: {
       list: () => request<Locations>('GET', '/v1/locations'),

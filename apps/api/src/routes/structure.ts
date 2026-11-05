@@ -383,6 +383,40 @@ export function registerStructureRoutes(app: Api, run: Run) {
   app.openapi(
     createRoute({
       method: 'get',
+      path: '/v1/availability',
+      tags: ['Members'],
+      summary: 'Weekly unavailable times for everyone approved in an area (Manager)',
+      security: secured,
+      request: { query: z.object({ areaId: z.guid() }) },
+      responses: {
+        200: json(z.array(z.object({ employeeId: z.guid(), slots: z.array(availabilitySlot) })), 'Per employee'),
+        400: errors[400],
+        401: errors[401],
+        403: errors[403],
+      },
+    }),
+    async (c) => {
+      const { areaId } = c.req.valid('query');
+      const rows = await run(c, async (tx) => {
+        await requireManager(tx);
+        return tx`
+          select a.* from app.availability a
+          join app.employee_areas ea on ea.employee_id = a.employee_id and ea.area_id = ${areaId}
+          order by a.employee_id, a.weekday, a.start_time`;
+      });
+      const byEmployee = new Map<string, ReturnType<typeof toAvailability>[]>();
+      for (const r of rows) {
+        const list = byEmployee.get(r.employee_id) ?? [];
+        list.push(toAvailability(r));
+        byEmployee.set(r.employee_id, list);
+      }
+      return c.json([...byEmployee].map(([employeeId, slots]) => ({ employeeId, slots })), 200);
+    },
+  );
+
+  app.openapi(
+    createRoute({
+      method: 'get',
       path: '/v1/members/{id}/availability',
       tags: ['Members'],
       summary: 'A member’s weekly unavailable times (Manager)',

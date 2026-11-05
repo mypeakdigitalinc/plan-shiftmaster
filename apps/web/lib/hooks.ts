@@ -11,9 +11,24 @@ export const keys = {
   locations: ['locations'] as const,
   templates: ['shift-templates'] as const,
   organization: ['organization'] as const,
+  shifts: ['shifts'] as const,
 };
 
-export const useMembers = () => useQuery({ queryKey: keys.members, queryFn: api.members.list });
+export const useMembers = () => useQuery({ queryKey: keys.members, queryFn: () => api.members.list() });
+export const useAreaMembers = (areaId: string | undefined) =>
+  useQuery({
+    queryKey: [...keys.members, 'area', areaId],
+    queryFn: () => api.members.list({ areaId }),
+    enabled: !!areaId,
+  });
+export const useAreaAvailability = (areaId: string | undefined) =>
+  useQuery({
+    queryKey: ['availability', areaId],
+    queryFn: () => api.members.areaAvailability(areaId!),
+    enabled: !!areaId,
+  });
+export const useShifts = (from: string, to: string) =>
+  useQuery({ queryKey: [...keys.shifts, from, to], queryFn: () => api.shifts.list({ from, to }) });
 export const useInvitations = (enabled = true) =>
   useQuery({ queryKey: keys.invitations, queryFn: api.invitations.list, enabled });
 export const useLocations = () => useQuery({ queryKey: keys.locations, queryFn: api.locations.list });

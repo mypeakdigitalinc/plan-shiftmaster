@@ -312,15 +312,30 @@ export function createApp(deps: AppDeps) {
       tags: ['Members'],
       summary: 'People in my organization (email/phone hidden from employees)',
       security: secured,
-      responses: { 200: json(z.array(profile.extend({ email: z.string().nullable() })), 'Members'), 401: errors[401], 409: errors[409] },
+      request: {
+        query: z.object({
+          areaId: z.guid().optional().describe('Only people approved to work in this area'),
+        }),
+      },
+      responses: {
+        200: json(z.array(profile.extend({ email: z.string().nullable() })), 'Members'),
+        400: errors[400],
+        401: errors[401],
+        409: errors[409],
+      },
     }),
     async (c) => {
       const me = c.get('user').sub;
+      const { areaId } = c.req.valid('query');
       const { rows, manager } = await run(c, async (tx) => {
         const orgId = await requireOrg(tx);
         return {
           manager: await isManager(tx),
-          rows: await tx`select * from app.profiles where organization_id = ${orgId} and deleted_at is null order by name`,
+          rows: await tx`
+            select p.* from app.profiles p
+            where p.organization_id = ${orgId} and p.deleted_at is null
+              ${areaId ? tx`and exists (select 1 from app.employee_areas ea where ea.employee_id = p.id and ea.area_id = ${areaId})` : tx``}
+            order by p.name`,
         };
       });
       // Employees don't see coworkers' contact details
