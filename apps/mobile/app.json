@@ -1,0 +1,14 @@
+{
+  "expo": {
+    "name": "ShiftHub",
+    "slug": "shifthub",
+    "scheme": "shifthub",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "ios": { "bundleIdentifier": "com.shifthub.app", "supportsTablet": false },
+    "android": { "package": "com.shifthub.app" },
+    "plugins": ["expo-router"],
+    "experiments": { "typedRoutes": true }
+  }
+}

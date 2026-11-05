@@ -57,27 +57,38 @@ Platform Admin = Supabase service role / dashboard only.
 |---|---|
 | Mobile (employees) | Expo + React Native + TypeScript, Expo Router, TanStack Query, Zustand, React Hook Form, Expo Notifications |
 | Web (managers/admins) | Next.js (App Router) + TypeScript, Tailwind, shadcn/ui, TanStack Table, FullCalendar |
-| Backend | Supabase: Postgres, Auth, RLS, Realtime, Edge Functions, pg_cron |
-| Hosting | Vercel (web), Expo EAS (mobile), Supabase (backend) |
+| API | **Hono** + `@hono/zod-openapi` (OpenAPI spec from shared Zod schemas), **Scalar** docs at `/docs`; runs on Node today, AWS Lambda later |
+| Backend | Supabase: Postgres, Auth, RLS, Storage, pg_cron (clients reach data only through the API) |
+| Hosting | Vercel (web + API), Expo EAS (mobile), Supabase (database + auth) |
 | Repo / CI | GitHub monorepo, GitHub Actions |
 
 ### Repo layout
 ```
 shifthub/
   apps/
+    api/          # Hono API (Node server + AWS Lambda entry), OpenAPI + Scalar docs
     web/          # Next.js admin portal
     mobile/       # Expo employee app
   packages/
-    api/          # Typed data-access layer (the ONLY place that talks to Supabase)
-    types/        # Shared TS types (generated from DB)
-    validation/   # Zod schemas shared by web + mobile
+    shared/       # Zod schemas + TS types (single source for API spec and clients)
+    api-client/   # Typed fetch client used by web + mobile
+    auth/         # Provider-neutral auth interface (+ Supabase implementation)
   supabase/
-    migrations/   # SQL schema + RLS
-    functions/    # Edge Functions
+    migrations/   # SQL schema + RLS + RPCs (tables live in the `app` schema)
+    tests/        # RLS / RPC tests against real Postgres
     seed.sql
 ```
 
-> **AWS-ready rule:** apps never import `supabase-js` directly — they call `packages/api`. Swapping to AWS later means rewriting that one package, not the apps.
+> **AWS-ready rule:** apps talk only to the ShiftHub API (`packages/api-client`) and to `packages/auth`. The API runs every request as the `authenticated` role with the caller's JWT claims, so Postgres RLS works the same on Supabase or RDS. Moving to AWS = swap auth verifier to Cognito JWKS, point `DATABASE_URL` at RDS, deploy `apps/api/src/lambda.ts`.
+
+### Architecture decisions
+| Topic | Decision |
+|---|---|
+| Data access | Portable Hono API in front of Postgres (no direct PostgREST from apps) |
+| Prisma | Not in MVP (bypasses RLS). Revisit for reports or the RDS move |
+| Scalar / OpenAPI | Yes — spec generated from `packages/shared`, docs at `/docs` |
+| Terraform | Light use for MVP (Supabase projects, Vercel, GitHub secrets); full use for AWS phase |
+| AWS migration | Planned after MVP; est. 2–4 weeks thanks to the API layer |
 
 ---
 
@@ -106,6 +117,7 @@ shift_swaps          id, organization_id, requester_id, target_id, requester_shi
                      status (pending_peer|pending_manager|approved|rejected|cancelled), decided_by, decided_at
 notifications        id, organization_id, user_id, type, title, body, data (jsonb), read_at
 push_tokens          id, user_id, token, platform
+invitations          id, organization_id, email, role, position, token, expires_at, accepted_at, revoked_at
 audit_logs           id, organization_id, user_id, action, entity_type, entity_id, details (jsonb)
 ```
 
@@ -118,10 +130,10 @@ audit_logs           id, organization_id, user_id, action, entity_type, entity_i
 
 ## 6. Security (Multi-Tenant)
 
-1. On signup/invite, a trigger writes `organization_id` + `role` into the user's JWT custom claims.
-2. Helper SQL functions: `auth_org_id()`, `auth_role()`.
+1. The API verifies the JWT, then sets `role = authenticated` and `request.jwt.claims` for the transaction.
+2. Helper SQL functions: `app.current_user_id()`, `app.current_org_id()`, `app.current_user_role()`, `app.is_manager()`, `app.is_org_admin()` — org and role are looked up from `profiles` (always fresh; no custom JWT claims needed).
 3. RLS on **every** table:
-   - Read: `organization_id = auth_org_id()`
+   - Read: `organization_id = app.current_org_id()`
    - Employees: write only their own availability, offers, requests, swaps (and own shifts when `allow_self_scheduling`).
    - **Schedule visibility (shifts table):** an employee can see a shift if it is theirs, OR it is posted on the marketplace, OR its owner has `share_schedule = true`. Managers/Admins always see all shifts in their org.
    - Managers/Admins: write org data.
@@ -200,7 +212,7 @@ Work runs in three parallel tracks: **Database → Web Portal → Mobile App**. 
 ### Track 1 — Database (Supabase)
 | Phase | Deliverables | Gate (unblocks) |
 |---|---|---|
-| **D1 Foundation** (wk 1) | Supabase staging + prod, migration setup, `organizations`, `org_settings`, `profiles`, JWT claims trigger, `auth_org_id()` / `auth_role()`, invite + invite-code join | Login works → Web W1 |
+| **D1 Foundation** (wk 1) ✅ done | Supabase staging + prod, migration setup, `organizations`, `org_settings`, `profiles`, JWT claims trigger, `auth_org_id()` / `auth_role()`, invite + invite-code join | Login works → Web W1 |
 | **D2 Org & people** (wk 2) | `sites`, `areas`, `assignments`, `employee_areas`, `availability`, `shift_templates` (+ defaults), RLS, seed: LTC facility (100 staff, RN/RPN/PSW) + sample group | Web W1 |
 | **D3 Scheduling** (wk 3) | `shifts` with draft/published, schedule-visibility RLS (`share_schedule`), `copy_week()` and `publish_week()` RPCs | Web W2, Mobile M1 |
 | **D4 Marketplace & swaps** (wk 4) | `shift_offers`, `shift_offer_requests`, `shift_swaps`, RPCs: `approve_pickup()`, `approve_swap()` (position + double-booking checks, auto-approve in group mode) | Web W3, Mobile M2 |

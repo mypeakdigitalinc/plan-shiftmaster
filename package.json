@@ -1,0 +1,19 @@
+{
+  "name": "shifthub",
+  "private": true,
+  "packageManager": "pnpm@10.28.0",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "typecheck": "pnpm -r --if-present typecheck",
+    "test": "pnpm -r --if-present --workspace-concurrency=1 test",
+    "dev:api": "pnpm --filter @shifthub/api dev",
+    "dev:web": "pnpm --filter @shifthub/web dev",
+    "dev:mobile": "pnpm --filter @shifthub/mobile start",
+    "db:reset": "bash supabase/scripts/reset-local-db.sh"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.0",
+    "@types/node": "^22.0.0"
+  }
+}
