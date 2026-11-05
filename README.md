@@ -3,7 +3,7 @@
 Multi-tenant shift scheduling for care facilities and self-organized worker groups.
 See **[Shifthub Master Plan.md](./Shifthub%20Master%20Plan.md)** for scope, data model and roadmap.
 
-**Status:** Database phases D1–D4 done with API endpoints: organizations & onboarding; sites, areas, assignments, shift templates, availability; shifts with draft/publish, copy week, schedule sharing; shift marketplace (give away / pick up) and swaps with manager approval or auto-approve. Web portal W1–W2 done: login, onboarding, invite accept, dashboard, employees, locations, shift templates, settings, the weekly schedule (assign, copy last week, publish, post to marketplace) and the approvals queue. Mobile is a scaffold.
+**Status:** Database phases D1–D4 done with API endpoints: organizations & onboarding; sites, areas, assignments, shift templates, availability; shifts with draft/publish, copy week, schedule sharing; shift marketplace (give away / pick up) and swaps with manager approval or auto-approve. Web portal W1–W3 done: login, onboarding, invite accept, dashboard, employees, locations, shift templates, settings, the weekly schedule (assign, copy last week, publish, post to marketplace) and the approvals queue. Mobile M1 done: login, join by code / invitation / start a group, My Schedule, shift details, profile with schedule-sharing toggle, availability, add-my-shift (groups).
 
 ## Structure
 
@@ -33,7 +33,7 @@ TOKEN=$(pnpm -s --filter @shifthub/api token admin@maplegrove.test)
 curl -H "Authorization: Bearer $TOKEN" http://localhost:8787/v1/me
 
 pnpm dev:web                           # http://localhost:3000 — sign in with any seed email (dev login)
-pnpm dev:mobile                        # Expo
+pnpm dev:mobile                        # Expo (press w for web, or scan with Expo Go; set EXPO_PUBLIC_API_URL to your LAN IP on a phone)
 ```
 
 ### Dev login (local only)
@@ -61,6 +61,7 @@ pnpm test        # needs Postgres; override with TEST_DATABASE_URL=postgresql://
 
 - `supabase/tests` — tenant isolation, role permissions, onboarding RPCs (RLS against real Postgres)
 - `packages/shared` — date/timezone/availability helpers
+- `apps/mobile/e2e-web.cjs` — mobile smoke test against the web build at iPhone size
 - `apps/web/e2e` — browser smoke tests (run against a local seeded stack; see file headers)
 - `apps/api/test` — API integration tests (auth, onboarding, members, settings, locations, templates, availability, shifts)
 

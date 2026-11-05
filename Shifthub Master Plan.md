@@ -231,7 +231,7 @@ Work runs in three parallel tracks: **Database → Web Portal → Mobile App**. 
 ### Track 3 — Mobile App (Expo, employees)
 | Phase | Deliverables | Needs |
 |---|---|---|
-| **M1 Core app** (wk 4) | Login / accept invite / join group by code, My Schedule (list + week), shift detail, Add My Shift (group mode), Availability | D3, W2 (published shifts to view) |
+| **M1 Core app** (wk 4) ✅ done (+ share toggle, profile edit) | Login / accept invite / join group by code, My Schedule (list + week), shift detail, Add My Shift (group mode), Availability | D3, W2 (published shifts to view) |
 | **M2 Marketplace & swaps** (wk 5) | Give away shift, Open Shifts + Request, Swap request / accept / reject, My Requests status | D4 |
 | **M3 Notifications & sharing** (wk 6) | Push registration, notification inbox, share-schedule toggle, Team Schedule view | D5 |
 | **Release** (wk 7) | E2E smoke tests, EAS builds → TestFlight + Play internal track | All |
