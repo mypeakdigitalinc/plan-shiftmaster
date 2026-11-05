@@ -179,20 +179,52 @@ pg_cron runs every 15 min → finds shifts starting in ~12h → push notificatio
 
 ---
 
-## 9. Build Plan (≈ 8 weeks, 1–2 devs)
+## 9. Build Plan — 3 Tracks (≈ 8 weeks)
 
-| Week | Milestone |
-|---|---|
-| 1 | Monorepo, Supabase project, CI, schema + RLS for orgs/profiles/sites/areas/assignments, auth + invite flow |
-| 2 | Web: Locations, Employees, Shift Templates CRUD; org modes + invite code; seed data (LTC facility with 100 staff, sample group) |
-| 3 | Web: Schedule calendar, create/edit shifts, copy week, publish |
-| 4 | Mobile: login/join group, My Schedule, Add My Shift, availability, share toggle + Team Schedule |
-| 5 | Marketplace: offers + requests (mobile) and approvals (web), approval RPC |
-| 6 | Swaps end-to-end; notifications (in-app + Expo push), reminders cron |
-| 7 | Audit logs, RLS test suite, E2E tests on core flows, bug fixing |
-| 8 | Pilot with LTC facility + 1–2 worker groups: TestFlight/Play internal track, Vercel prod, feedback fixes |
+Work runs in three parallel tracks: **Database → Web Portal → Mobile App**. Each track starts once the track it depends on has delivered what it needs (its gate), so one developer per track can work in parallel.
 
-**Definition of done for each feature:** migration + RLS + API function + UI + test.
+### Overview
+| Week | Database | Web Portal | Mobile App |
+|---|---|---|---|
+| 1 | D1 Foundation | Repo + CI setup | Repo + CI setup |
+| 2 | D2 Org & people | W1 Setup screens | – |
+| 3 | D3 Scheduling | W2 Schedule | – |
+| 4 | D4 Marketplace & swaps | W3 Approvals | M1 Core app |
+| 5 | D5 Notifications | W4 Settings & dashboard | M2 Marketplace & swaps |
+| 6 | D6 Hardening | Bug fixes | M3 Notifications & sharing |
+| 7 | Support | E2E tests | E2E tests, store builds |
+| 8 | **Pilot** — LTC facility + 1–2 worker groups | | |
+
+---
+
+### Track 1 — Database (Supabase)
+| Phase | Deliverables | Gate (unblocks) |
+|---|---|---|
+| **D1 Foundation** (wk 1) | Supabase staging + prod, migration setup, `organizations`, `org_settings`, `profiles`, JWT claims trigger, `auth_org_id()` / `auth_role()`, invite + invite-code join | Login works → Web W1 |
+| **D2 Org & people** (wk 2) | `sites`, `areas`, `assignments`, `employee_areas`, `availability`, `shift_templates` (+ defaults), RLS, seed: LTC facility (100 staff, RN/RPN/PSW) + sample group | Web W1 |
+| **D3 Scheduling** (wk 3) | `shifts` with draft/published, schedule-visibility RLS (`share_schedule`), `copy_week()` and `publish_week()` RPCs | Web W2, Mobile M1 |
+| **D4 Marketplace & swaps** (wk 4) | `shift_offers`, `shift_offer_requests`, `shift_swaps`, RPCs: `approve_pickup()`, `approve_swap()` (position + double-booking checks, auto-approve in group mode) | Web W3, Mobile M2 |
+| **D5 Notifications** (wk 5) | `notifications`, `push_tokens`, Edge Function to send Expo push, pg_cron 12h reminders, `audit_logs` triggers | Mobile M3 |
+| **D6 Hardening** (wk 6) | RLS test suite (cross-org isolation), index review, generated TS types in `packages/types` | Pilot |
+
+### Track 2 — Web Portal (Next.js, managers/admins)
+| Phase | Deliverables | Needs |
+|---|---|---|
+| **W1 Setup screens** (wk 2) | Login, org onboarding (facility/group), Locations (sites → areas → assignments), Employees (invite, role, position, areas), Shift Templates | D1, D2 |
+| **W2 Schedule** (wk 3) | Week calendar by site/area, create/edit/assign shifts, availability shown, copy week, publish | D3 |
+| **W3 Approvals** (wk 4) | Pickup and swap approval queue, approve/reject with reason | D4 |
+| **W4 Settings & dashboard** (wk 5) | Org settings (approval rules, modes), dashboard (today's coverage, pending approvals), audit log view | D4, D5 |
+| **Tests** (wk 7) | Playwright: publish, approve pickup, approve swap | All |
+
+### Track 3 — Mobile App (Expo, employees)
+| Phase | Deliverables | Needs |
+|---|---|---|
+| **M1 Core app** (wk 4) | Login / accept invite / join group by code, My Schedule (list + week), shift detail, Add My Shift (group mode), Availability | D3, W2 (published shifts to view) |
+| **M2 Marketplace & swaps** (wk 5) | Give away shift, Open Shifts + Request, Swap request / accept / reject, My Requests status | D4 |
+| **M3 Notifications & sharing** (wk 6) | Push registration, notification inbox, share-schedule toggle, Team Schedule view | D5 |
+| **Release** (wk 7) | E2E smoke tests, EAS builds → TestFlight + Play internal track | All |
+
+**Definition of done for each feature:** migration + RLS + API function in `packages/api` + UI + test.
 
 ---
 
