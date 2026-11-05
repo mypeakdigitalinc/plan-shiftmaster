@@ -265,3 +265,91 @@ export const setAvailabilityInput = z.object({
 export type SetAvailabilityInput = z.input<typeof setAvailabilityInput>;
 
 export const setMemberAreasInput = z.object({ areaIds: z.array(z.guid()).max(200) });
+
+// =====================================================================
+// D3 — Scheduling
+// =====================================================================
+
+export const localDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD');
+export const shiftStatus = z.enum(['draft', 'published', 'cancelled']);
+export type ShiftStatus = z.infer<typeof shiftStatus>;
+
+export const shift = z.object({
+  id: z.guid(),
+  siteId: z.guid(),
+  areaId: z.guid(),
+  assignmentId: z.guid().nullable(),
+  employeeId: z.guid().nullable(),
+  employeeName: z.string().nullable(),
+  shiftTemplateId: z.guid().nullable(),
+  /** Local date / times in the site's timezone. */
+  date: localDate,
+  startTime: timeOfDay,
+  endTime: timeOfDay,
+  timezone: z.string(),
+  startsAt: z.string(),
+  endsAt: z.string(),
+  status: shiftStatus,
+  notes: z.string().nullable(),
+  publishedAt: z.string().nullable(),
+});
+export type Shift = z.infer<typeof shift>;
+
+export const listShiftsQuery = z.object({
+  from: localDate,
+  to: localDate,
+  areaId: z.guid().optional(),
+  employeeId: z.guid().optional(),
+  mine: z.enum(['true', 'false']).optional(),
+  status: shiftStatus.optional(),
+});
+export type ListShiftsQuery = z.input<typeof listShiftsQuery>;
+
+/** Times come from a template, or explicit start/end (end <= start = overnight). */
+const shiftTimes = {
+  date: localDate,
+  shiftTemplateId: z.guid().nullable().optional(),
+  startTime: timeOfDay.optional(),
+  endTime: timeOfDay.optional(),
+};
+
+export const createShiftInput = z
+  .object({
+    areaId: z.guid(),
+    assignmentId: z.guid().nullable().optional(),
+    /** Managers: anyone (or null for an open slot). Employees (self-scheduling): omit or self. */
+    employeeId: z.guid().nullable().optional(),
+    notes: z.string().trim().max(500).nullable().optional(),
+    /** Defaults: draft for managers, published for self-scheduled shifts. */
+    status: z.enum(['draft', 'published']).optional(),
+    ...shiftTimes,
+  })
+  .refine((v) => v.shiftTemplateId || (v.startTime && v.endTime), 'Give shiftTemplateId or startTime + endTime');
+export type CreateShiftInput = z.input<typeof createShiftInput>;
+
+export const updateShiftInput = z
+  .object({
+    assignmentId: z.guid().nullable(),
+    employeeId: z.guid().nullable(),
+    notes: z.string().trim().max(500).nullable(),
+    status: shiftStatus,
+    ...shiftTimes,
+    date: localDate.optional(),
+  })
+  .partial();
+export type UpdateShiftInput = z.input<typeof updateShiftInput>;
+
+export const publishShiftsInput = z.object({
+  from: localDate,
+  to: localDate,
+  areaId: z.guid().optional(),
+});
+export type PublishShiftsInput = z.input<typeof publishShiftsInput>;
+
+export const copyWeekInput = z.object({
+  sourceWeekStart: localDate,
+  targetWeekStart: localDate,
+  areaId: z.guid().optional(),
+  includeEmployees: z.boolean().default(true),
+});
+export type CopyWeekInput = z.input<typeof copyWeekInput>;

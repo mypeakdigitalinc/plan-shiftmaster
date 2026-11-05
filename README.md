@@ -3,7 +3,7 @@
 Multi-tenant shift scheduling for care facilities and self-organized worker groups.
 See **[Shifthub Master Plan.md](./Shifthub%20Master%20Plan.md)** for scope, data model and roadmap.
 
-**Status:** Phases D1 (foundation) and D2 (sites, areas, assignments, shift templates, employee areas, availability) done, with API endpoints. Web/mobile are scaffolds; UI starts in W1.
+**Status:** Database phases D1–D3 done with API endpoints: organizations & onboarding; sites, areas, assignments, shift templates, availability; shifts with draft/publish, copy week, schedule sharing. Web/mobile are scaffolds; UI starts in W1.
 
 ## Structure
 
@@ -44,7 +44,7 @@ pnpm dev:mobile                        # Expo
 | `staff1@maplegrove.test` … `staff95@` | Maple Grove | employee (RN / RPN / PSW / Support) |
 | `owl1@nightowls.test` … `owl6@` | Night Owls Crew (group, invite code `OWLS000002`) | owl1 = org_admin |
 
-Maple Grove has 1 site with 3 units (Birch, Cedar, Willow), each with 7 positions (Charge Nurse RN, 2 × Med Pass RPN, 4 × PSW). Every org starts with Day 07–15, Evening 15–23, Night 23–07 templates.
+Maple Grove has 1 site with 3 units (Birch, Cedar, Willow), each with 7 positions (Charge Nurse RN, 2 × Med Pass RPN, 4 × PSW). Every org starts with Day 07–15, Evening 15–23, Night 23–07 templates. The seed publishes **the current week's** schedule (441 shifts, Night PSW 3/4 left open) relative to when you run it.
 
 Invite token for the accept flow: `dev-invite-token-newhire` (for `newhire@maplegrove.test`).
 
@@ -56,7 +56,7 @@ pnpm test        # needs Postgres; override with TEST_DATABASE_URL=postgresql://
 ```
 
 - `supabase/tests` — tenant isolation, role permissions, onboarding RPCs (RLS against real Postgres)
-- `apps/api/test` — API integration tests (auth, onboarding, members, settings, locations, templates, availability)
+- `apps/api/test` — API integration tests (auth, onboarding, members, settings, locations, templates, availability, shifts)
 
 ## Deploying (when accounts exist)
 

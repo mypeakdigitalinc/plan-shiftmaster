@@ -9,7 +9,13 @@ import type {
   AvailabilitySlot,
   CreateAreaInput,
   CreateAssignmentInput,
+  CopyWeekInput,
+  CreateShiftInput,
   CreateShiftTemplateInput,
+  ListShiftsQuery,
+  PublishShiftsInput,
+  Shift,
+  UpdateShiftInput,
   CreateSiteInput,
   Locations,
   ShiftTemplate,
@@ -110,6 +116,21 @@ export function createApiClient({ baseUrl, getAccessToken, fetch: f = fetch }: A
       updateAssignment: (id: string, input: UpdateAssignmentInput) =>
         request<Assignment>('PATCH', `/v1/assignments/${id}`, input),
       deleteAssignment: (id: string) => request<void>('DELETE', `/v1/assignments/${id}`),
+    },
+    shifts: {
+      list: (query: ListShiftsQuery) => {
+        const qs = new URLSearchParams(
+          Object.entries(query).filter(([, v]) => v !== undefined) as [string, string][],
+        ).toString();
+        return request<Shift[]>('GET', `/v1/shifts?${qs}`);
+      },
+      get: (id: string) => request<Shift>('GET', `/v1/shifts/${id}`),
+      create: (input: CreateShiftInput) => request<Shift>('POST', '/v1/shifts', input),
+      update: (id: string, input: UpdateShiftInput) => request<Shift>('PATCH', `/v1/shifts/${id}`, input),
+      remove: (id: string) => request<void>('DELETE', `/v1/shifts/${id}`),
+      publish: (input: PublishShiftsInput) => request<{ published: number }>('POST', '/v1/shifts/publish', input),
+      copyWeek: (input: CopyWeekInput) =>
+        request<{ copied: number; unassigned: number }>('POST', '/v1/shifts/copy-week', input),
     },
     shiftTemplates: {
       list: () => request<ShiftTemplate[]>('GET', '/v1/shift-templates'),

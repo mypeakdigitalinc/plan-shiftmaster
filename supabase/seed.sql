@@ -125,4 +125,49 @@ insert into app.availability (organization_id, employee_id, weekday, start_time,
   ('00000000-0000-4000-a000-000000000001', '00000000-0000-4000-b000-000000000006', 0, '00:00', '24:00', 'Family day'),
   ('00000000-0000-4000-a000-000000000001', '00000000-0000-4000-b000-000000000006', 3, '15:00', '24:00', 'Class');
 
+-- ---------------------------------------------------------------------------
+-- D3: this week's schedule for Maple Grove (published) — relative to "now".
+-- Staff rotate round-robin per unit + position; Night PSW 3/4 left unassigned.
+-- ---------------------------------------------------------------------------
+with week as (
+  select date_trunc('week', (now() at time zone 'America/Toronto'))::date as monday
+),
+slots as (
+  select a.id as area_id, x.id as assignment_id, x.required_position as pos, x.display_order,
+         t.id as template_id, t.name as template_name, t.start_time, t.end_time, d.day,
+         row_number() over (partition by a.id, x.required_position
+                            order by d.day, t.start_time, x.display_order) - 1 as k
+  from app.areas a
+  join app.assignments x on x.area_id = a.id
+  join app.shift_templates t on t.organization_id = a.organization_id and t.is_default
+  cross join generate_series(0, 6) as d(day)
+  where a.organization_id = '00000000-0000-4000-a000-000000000001'
+),
+eligible as (
+  select ea.area_id, p.position, p.id as employee_id,
+         row_number() over (partition by ea.area_id, p.position order by p.id) - 1 as i,
+         count(*) over (partition by ea.area_id, p.position) as n
+  from app.employee_areas ea
+  join app.profiles p on p.id = ea.employee_id
+  where p.role = 'employee' and p.organization_id = '00000000-0000-4000-a000-000000000001'
+)
+insert into app.shifts (organization_id, area_id, assignment_id, employee_id, shift_template_id,
+                        starts_at, ends_at, status)
+select '00000000-0000-4000-a000-000000000001', s.area_id, s.assignment_id,
+       case when s.template_name = 'Night' and s.display_order >= 6 then null else e.employee_id end,
+       s.template_id, r.starts_at, r.ends_at, 'published'
+from slots s
+cross join week w
+cross join lateral app.local_range(w.monday + s.day, s.start_time, s.end_time, 'America/Toronto') r
+left join eligible e on e.area_id = s.area_id and e.position = s.pos and e.i = s.k % e.n
+order by r.starts_at;
+
+-- Night Owls: a few self-scheduled shifts this week
+insert into app.shifts (organization_id, area_id, assignment_id, employee_id, starts_at, ends_at, status)
+select '00000000-0000-4000-a000-000000000002', '00000000-0000-4000-e000-000000000004', null,
+       ('00000000-0000-4000-c000-' || lpad(n::text, 12, '0'))::uuid, r.starts_at, r.ends_at, 'published'
+from generate_series(1, 6) as n
+cross join lateral app.local_range(
+  date_trunc('week', (now() at time zone 'America/Toronto'))::date + (n % 7), '19:00', '07:00', 'America/Toronto') r;
+
 commit;

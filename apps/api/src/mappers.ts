@@ -5,6 +5,7 @@ import type {
   Invitation,
   Organization,
   Profile,
+  Shift,
   ShiftTemplate,
   Site,
 } from '@shifthub/shared';
@@ -100,4 +101,26 @@ export const toAvailability = (r: Row): AvailabilitySlot => ({
   startTime: hhmm(r.start_time),
   endTime: hhmm(r.end_time),
   note: r.note,
+});
+
+// ---------- D3 ----------
+
+/** Expects the row from SHIFT_SELECT (adds local_date, local_start, local_end, tz, employee_name). */
+export const toShift = (r: Row): Shift => ({
+  id: r.id,
+  siteId: r.site_id,
+  areaId: r.area_id,
+  assignmentId: r.assignment_id,
+  employeeId: r.employee_id,
+  employeeName: r.employee_name ?? null,
+  shiftTemplateId: r.shift_template_id,
+  date: r.local_date,
+  startTime: hhmm(r.local_start),
+  endTime: hhmm(r.local_end),
+  timezone: r.tz,
+  startsAt: iso(r.starts_at)!,
+  endsAt: iso(r.ends_at)!,
+  status: r.status,
+  notes: r.notes,
+  publishedAt: iso(r.published_at),
 });

@@ -214,7 +214,7 @@ Work runs in three parallel tracks: **Database → Web Portal → Mobile App**. 
 |---|---|---|
 | **D1 Foundation** (wk 1) ✅ done | Supabase staging + prod, migration setup, `organizations`, `org_settings`, `profiles`, JWT claims trigger, `auth_org_id()` / `auth_role()`, invite + invite-code join | Login works → Web W1 |
 | **D2 Org & people** (wk 2) ✅ done (+ API endpoints) | `sites`, `areas`, `assignments`, `employee_areas`, `availability`, `shift_templates` (+ defaults), RLS, seed: LTC facility (100 staff, RN/RPN/PSW) + sample group | Web W1 |
-| **D3 Scheduling** (wk 3) | `shifts` with draft/published, schedule-visibility RLS (`share_schedule`), `copy_week()` and `publish_week()` RPCs | Web W2, Mobile M1 |
+| **D3 Scheduling** (wk 3) ✅ done (+ API endpoints) | `shifts` with draft/published, schedule-visibility RLS (`share_schedule`), `copy_week()` and `publish_week()` RPCs | Web W2, Mobile M1 |
 | **D4 Marketplace & swaps** (wk 4) | `shift_offers`, `shift_offer_requests`, `shift_swaps`, RPCs: `approve_pickup()`, `approve_swap()` (position + double-booking checks, auto-approve in group mode) | Web W3, Mobile M2 |
 | **D5 Notifications** (wk 5) | `notifications`, `push_tokens`, Edge Function to send Expo push, pg_cron 12h reminders, `audit_logs` triggers | Mobile M3 |
 | **D6 Hardening** (wk 6) | RLS test suite (cross-org isolation), index review, generated TS types in `packages/types` | Pilot |

@@ -33,6 +33,7 @@ import {
   type Run,
 } from './http';
 import { toInvitation, toOrganization, toProfile } from './mappers';
+import { registerShiftRoutes } from './routes/shifts';
 import { registerStructureRoutes } from './routes/structure';
 
 export type AppDeps = {
@@ -422,6 +423,7 @@ export function createApp(deps: AppDeps) {
   );
 
   registerStructureRoutes(app, run);
+  registerShiftRoutes(app, run);
 
   // ----- docs -----
   app.doc31('/openapi.json', {
