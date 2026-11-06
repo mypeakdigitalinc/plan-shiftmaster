@@ -10,6 +10,7 @@ begin;
 
 -- seed data should not notify anyone
 select set_config('app.bulk_publish', 'on', true);
+select set_config('app.skip_audit', 'on', true);
 
 insert into app.organizations (id, name, timezone) values
   ('00000000-0000-4000-a000-000000000001', 'Maple Grove Care Home', 'America/Toronto'),

@@ -500,6 +500,10 @@ declare
   v_row jsonb := coalesce(v_new, v_old);
   v_details jsonb;
 begin
+  -- bulk loads (seed / imports) can opt out
+  if coalesce(current_setting('app.skip_audit', true), '') = 'on' then
+    return null;
+  end if;
   if tg_op = 'UPDATE' then
     select coalesce(jsonb_object_agg(k, jsonb_build_object('from', v_old -> k, 'to', v_new -> k)), '{}')
       into v_details
