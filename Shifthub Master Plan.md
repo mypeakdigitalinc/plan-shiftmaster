@@ -217,7 +217,7 @@ Work runs in three parallel tracks: **Database → Web Portal → Mobile App**. 
 | **D3 Scheduling** (wk 3) ✅ done (+ API endpoints) | `shifts` with draft/published, schedule-visibility RLS (`share_schedule`), `copy_week()` and `publish_week()` RPCs | Web W2, Mobile M1 |
 | **D4 Marketplace & swaps** (wk 4) ✅ done (+ API endpoints) | `shift_offers`, `shift_offer_requests`, `shift_swaps`, RPCs: `approve_pickup()`, `approve_swap()` (position + double-booking checks, auto-approve in group mode) | Web W3, Mobile M2 |
 | **D5 Notifications** (wk 5) ✅ done (+ job runner endpoint) | `notifications`, `push_tokens`, Edge Function to send Expo push, pg_cron 12h reminders, `audit_logs` triggers | Mobile M3 |
-| **D6 Hardening** (wk 6) | RLS test suite (cross-org isolation), index review, generated TS types in `packages/types` | Pilot |
+| **D6 Hardening** (wk 6) ✅ done (RLS perf, contract tests instead of DB-generated types) | RLS test suite (cross-org isolation), index review, generated TS types in `packages/types` | Pilot |
 
 ### Track 2 — Web Portal (Next.js, managers/admins)
 | Phase | Deliverables | Needs |

@@ -1,6 +1,9 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import { Scalar } from '@scalar/hono-api-reference';
+import { timingSafeEqual } from 'node:crypto';
+import { bodyLimit } from 'hono/body-limit';
 import { cors } from 'hono/cors';
+import { secureHeaders } from 'hono/secure-headers';
 import {
   acceptInvitationInput,
   createInvitationInput,
@@ -82,6 +85,15 @@ export function createApp(deps: AppDeps) {
   });
 
   app.use('*', cors({ origin: deps.corsOrigins ?? ['http://localhost:3000'], credentials: true }));
+  // API-only headers; the /docs page needs inline scripts from the Scalar CDN, so CSP is relaxed there
+  app.use('/v1/*', secureHeaders());
+  app.use(
+    '*',
+    bodyLimit({
+      maxSize: 100 * 1024,
+      onError: (c) => c.json({ error: { code: 'payload_too_large', message: 'Request body too large' } }, 413),
+    }),
+  );
 
   if (deps.devLoginSecret) {
     app.route('/', devLoginRoutes(deps.db, deps.devLoginSecret));
@@ -461,7 +473,9 @@ export function createApp(deps: AppDeps) {
   // Scheduled jobs: reminders, offer expiry, push delivery. Not under /v1 (no user token).
   if (deps.jobsSecret) {
     app.post('/internal/jobs/run', async (c) => {
-      if (c.req.header('x-jobs-secret') !== deps.jobsSecret) {
+      const given = Buffer.from(c.req.header('x-jobs-secret') ?? '');
+      const want = Buffer.from(deps.jobsSecret!);
+      if (given.length !== want.length || !timingSafeEqual(given, want)) {
         return c.json({ error: { code: 'unauthorized', message: 'Bad jobs secret' } }, 401);
       }
       const sender = deps.pushSender ?? (async (m) => m.map((x) => ({ token: x.to, ok: false, error: 'no push sender' })));

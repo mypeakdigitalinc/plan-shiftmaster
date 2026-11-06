@@ -9,3 +9,4 @@ coverage/
 !.env.example
 .turbo/
 next-env.d.ts
+e2e-results/

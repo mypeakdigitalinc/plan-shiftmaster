@@ -21,6 +21,7 @@ export function createTokenVerifier(opts: {
       ? new TextEncoder().encode(opts.jwtSecret)
       : null;
   if (!key) throw new Error('No JWT verification key configured');
+  if (!opts.jwksUrl && (opts.jwtSecret?.length ?? 0) < 32) throw new Error('AUTH_JWT_SECRET must be at least 32 characters');
 
   return async (token) => {
     let payload: JWTPayload;
@@ -28,6 +29,8 @@ export function createTokenVerifier(opts: {
       ({ payload } = await jwtVerify(token, key as Parameters<typeof jwtVerify>[1], {
         issuer: opts.issuer,
         audience: opts.audience,
+        requiredClaims: ['sub', 'exp'],
+        clockTolerance: 30,
       }));
     } catch {
       throw new AuthError('Invalid or expired token');

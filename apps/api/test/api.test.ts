@@ -167,3 +167,33 @@ describe('dev login', () => {
     expect((await call('POST', '/dev/token', undefined, { email: 'a@b.co' })).status).toBe(404);
   });
 });
+
+describe('hardening', () => {
+  it('rejects tokens without an expiry', async () => {
+    const { SignJWT } = await import('jose');
+    const noExp = await new SignJWT({ email: ids.staffA1.email })
+      .setProtectedHeader({ alg: 'HS256' })
+      .setSubject(ids.staffA1.sub)
+      .setAudience('authenticated')
+      .sign(new TextEncoder().encode('test-secret-test-secret-test-secret-123'));
+    const res = await api.app.request('/v1/me', { headers: { authorization: `Bearer ${noExp}` } });
+    expect(res.status).toBe(401);
+  });
+
+  it('rejects oversized bodies', async () => {
+    const res = await call('PATCH', '/v1/me', ids.staffA1, { name: 'x'.repeat(200_000) });
+    expect(res.status).toBe(413);
+  });
+
+  it('sends security headers on API responses', async () => {
+    const token = await signToken(ids.staffA1);
+    const res = await api.app.request('/v1/me', { headers: { authorization: `Bearer ${token}` } });
+    expect(res.headers.get('x-content-type-options')).toBe('nosniff');
+    expect(res.headers.get('x-frame-options')).toBeTruthy();
+  });
+
+  it('refuses short HS256 secrets', async () => {
+    const { createTokenVerifier } = await import('../src/auth');
+    expect(() => createTokenVerifier({ jwtSecret: 'short' })).toThrow(/32 characters/);
+  });
+});

@@ -105,7 +105,8 @@ export function registerShiftRoutes(app: Api, run: Run) {
         await requireOrg(tx);
         const filters = [
           // coarse UTC window uses the index; exact local-date filter follows
-          tx`and s.starts_at >= ${q.from}::date - 1 and s.starts_at < ${q.to}::date + 2`,
+          // timestamptz bounds (not date) so the comparison is leakproof and can use the index under RLS
+          tx`and s.starts_at >= (${q.from}::date - 1)::timestamptz and s.starts_at < (${q.to}::date + 2)::timestamptz`,
           tx`and (s.starts_at at time zone z.tz)::date between ${q.from}::date and ${q.to}::date`,
           q.areaId ? tx`and s.area_id = ${q.areaId}` : tx``,
           q.employeeId ? tx`and s.employee_id = ${q.employeeId}` : tx``,

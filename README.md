@@ -61,9 +61,22 @@ pnpm test        # needs Postgres; override with TEST_DATABASE_URL=postgresql://
 
 - `supabase/tests` — tenant isolation, role permissions, onboarding RPCs (RLS against real Postgres)
 - `packages/shared` — date/timezone/availability helpers
-- `apps/mobile/e2e-web.cjs`, `e2e-web-trades.cjs` — mobile smoke tests against the web build at iPhone size
-- `apps/web/e2e` — browser smoke tests (run against a local seeded stack; see file headers)
+- `apps/api/test/contract.test.ts` — every API response is checked against the shared Zod schemas
+- Browser smoke tests (web portal + mobile web build at iPhone size): `bash scripts/e2e.sh` builds both apps,
+  starts API/web/mobile on :8787/:3000/:8081, reseeds before each test and writes screenshots + logs to `e2e-results/`.
+  Needs `require('playwright')` (e.g. `npm i -g playwright` and `NODE_PATH=$(npm root -g)`). Runs in CI as the `e2e` job.
 - `apps/api/test` — API integration tests (auth, onboarding, members, settings, locations, templates, availability, shifts)
+
+## Performance & security notes
+
+- RLS policies call per-user helpers as `(select app.fn())` so they run once per query, not per row
+  (migration `…000006_rls_performance.sql`; follow this convention in new policies).
+- Time-range filters on RLS tables must compare `timestamptz` to `timestamptz` (leakproof) so the index is used.
+- With 10k shifts every API endpoint answers in < 50 ms locally (manager week view ≈ 40 ms).
+- API: tokens must carry `exp`; HS256 secrets ≥ 32 chars; 100 KB body limit; security headers on `/v1/*`;
+  constant-time jobs secret check; dev login refused when `NODE_ENV=production`.
+- `pnpm audit --prod`: remaining advisories are in the Expo CLI's build tooling (glob/minimatch), not in shipped code.
+  Rate limiting is left to the hosting platform (Vercel/API Gateway) for the MVP.
 
 ## Notifications & scheduled jobs
 
