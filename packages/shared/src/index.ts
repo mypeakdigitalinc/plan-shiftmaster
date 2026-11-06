@@ -437,3 +437,47 @@ export const createSwapInput = z.object({
 export const swapResponseInput = z.object({ accept: z.boolean() });
 export type CreateOfferInput = z.input<typeof createOfferInput>;
 export type CreateSwapInput = z.input<typeof createSwapInput>;
+
+// =====================================================================
+// D5 — Notifications & audit
+// =====================================================================
+
+export const notificationType = z.enum([
+  'schedule_published', 'shift_assigned', 'shift_removed', 'shift_cancelled', 'shift_reminder',
+  'shift_available', 'pickup_requested', 'pickup_approved', 'pickup_rejected', 'shift_picked_up',
+  'swap_requested', 'swap_accepted', 'swap_declined', 'swap_waiting_approval', 'swap_approved', 'swap_rejected',
+]);
+export type NotificationType = z.infer<typeof notificationType>;
+
+export const notification = z.object({
+  id: z.guid(),
+  type: notificationType,
+  title: z.string(),
+  body: z.string(),
+  data: z.record(z.string(), z.unknown()),
+  readAt: z.string().nullable(),
+  createdAt: z.string(),
+});
+export type Notification = z.infer<typeof notification>;
+
+export const notificationList = z.object({ items: z.array(notification), unreadCount: z.number().int() });
+export type NotificationList = z.infer<typeof notificationList>;
+
+export const markReadInput = z.object({ ids: z.array(z.guid()).max(500).optional() });
+export const pushTokenInput = z.object({
+  token: z.string().min(10).max(300),
+  platform: z.enum(['ios', 'android', 'web']),
+});
+export type PushTokenInput = z.input<typeof pushTokenInput>;
+
+export const auditEntry = z.object({
+  id: z.number().int(),
+  action: z.string(),
+  entityType: z.string(),
+  entityId: z.guid().nullable(),
+  userId: z.guid().nullable(),
+  userName: z.string().nullable(),
+  details: z.record(z.string(), z.unknown()),
+  createdAt: z.string(),
+});
+export type AuditEntry = z.infer<typeof auditEntry>;

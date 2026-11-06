@@ -4,6 +4,8 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Loading } from '@/components/ui';
+import { routeForNotification } from '@/lib/hooks';
+import { onNotificationTap, registerForPush } from '@/lib/push';
 import { SessionProvider, useSession } from '@/lib/session';
 import { colors } from '@/lib/theme';
 
@@ -30,6 +32,19 @@ function Guard() {
   return null;
 }
 
+/** Registers this device for push once someone is signed in to an organization, and routes taps. */
+function PushSetup() {
+  const { me } = useSession();
+  const router = useRouter();
+  const userId = me?.organization ? me.profile.id : null;
+  useEffect(() => {
+    if (!userId) return;
+    registerForPush().catch(() => {});
+    return onNotificationTap((data) => router.push(routeForNotification(String(data.type ?? ''), data) as never));
+  }, [userId, router]);
+  return null;
+}
+
 export default function RootLayout() {
   const [client] = useState(
     () => new QueryClient({ defaultOptions: { queries: { staleTime: 30_000, retry: 1 } } }),
@@ -40,6 +55,7 @@ export default function RootLayout() {
         <SessionProvider>
           <StatusBar style="dark" />
           <Guard />
+          <PushSetup />
           <Stack
             screenOptions={{
               headerTintColor: colors.brand,
@@ -54,6 +70,8 @@ export default function RootLayout() {
             <Stack.Screen name="shift/[id]" options={{ title: 'Shift' }} />
             <Stack.Screen name="availability" options={{ title: 'Availability' }} />
             <Stack.Screen name="swap/[id]" options={{ title: 'Swap shift' }} />
+            <Stack.Screen name="notifications" options={{ title: 'Notifications' }} />
+            <Stack.Screen name="team" options={{ title: 'Team schedule' }} />
             <Stack.Screen name="add-shift" options={{ title: 'Add my shift', presentation: 'modal' }} />
           </Stack>
         </SessionProvider>

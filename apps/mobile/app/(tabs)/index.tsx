@@ -61,7 +61,12 @@ export default function MySchedule() {
           </View>
         )}
 
-        {canSelfSchedule && <Button title="+ Add my shift" variant="secondary" onPress={() => router.push('/add-shift')} />}
+        <View style={{ flexDirection: 'row', gap: space.sm }}>
+          <Button title="Team schedule" variant="secondary" style={{ flex: 1 }} onPress={() => router.push('/team')} />
+          {canSelfSchedule && (
+            <Button title="+ Add my shift" variant="secondary" style={{ flex: 1 }} onPress={() => router.push('/add-shift')} />
+          )}
+        </View>
 
         <ErrorText error={shifts.error} />
         {shifts.isPending ? (

@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
+import { pushSupported, registerForPush } from '@/lib/push';
 import { Text } from 'react-native';
 import { Badge, Button, Card, ErrorText, Row, Screen, SectionTitle, styles, TextField, ToggleRow } from '@/components/ui';
 import { api } from '@/lib/api';
@@ -46,6 +47,9 @@ export default function Profile() {
         <ErrorText error={share.error} />
       </Card>
 
+      <SectionTitle>Notifications</SectionTitle>
+      <PushCard />
+
       <SectionTitle>Availability</SectionTitle>
       <Button title="Times I can't work" variant="secondary" onPress={() => router.push('/availability')} />
 
@@ -59,5 +63,27 @@ export default function Profile() {
 
       <Button title="Sign out" variant="danger" onPress={signOut} />
     </Screen>
+  );
+}
+
+function PushCard() {
+  const [status, setStatus] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const enable = async () => {
+    setBusy(true);
+    const r = await registerForPush().catch((e: Error) => ({ ok: false as const, reason: e.message }));
+    setStatus(r.ok ? 'Push notifications are on for this phone.' : r.reason);
+    setBusy(false);
+  };
+  return (
+    <Card>
+      <Text style={styles.muted}>
+        {status ??
+          (pushSupported
+            ? 'Get a buzz for new schedules, swaps, open shifts and reminders 12 hours before each shift.'
+            : 'Push notifications work in the phone app. You can still see everything under the bell icon.')}
+      </Text>
+      {pushSupported && <Button title="Turn on push notifications" variant="secondary" onPress={enable} loading={busy} />}
+    </Card>
   );
 }

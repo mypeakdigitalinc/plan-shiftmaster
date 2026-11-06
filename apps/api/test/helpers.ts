@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { createTestDatabase } from '@shifthub/db/testing';
 import { SignJWT } from 'jose';
-import { createApp } from '../src/app';
+import { createApp, type AppDeps } from '../src/app';
 import { createTokenVerifier } from '../src/auth';
 import { createDb } from '../src/db';
 
@@ -24,11 +24,11 @@ export const newUser = (): TestUser => {
 };
 
 /** Fresh seeded database + app; returns a `call` helper. */
-export async function setupApi(dbName: string) {
+export async function setupApi(dbName: string, extra: Partial<AppDeps> = {}) {
   const setup = await createTestDatabase(dbName, { seed: true });
   await setup.end();
   const db = createDb(`${baseUrl}/${dbName}`, { max: 3 });
-  const app = createApp({ db, verifyToken: createTokenVerifier({ jwtSecret: SECRET, audience: 'authenticated' }) });
+  const app = createApp({ db, verifyToken: createTokenVerifier({ jwtSecret: SECRET, audience: 'authenticated' }), ...extra });
 
   async function call(method: string, path: string, user?: TestUser, body?: unknown) {
     const headers: Record<string, string> = { 'content-type': 'application/json' };
@@ -38,5 +38,5 @@ export async function setupApi(dbName: string) {
     return { status: res.status, body: text ? JSON.parse(text) : null };
   }
 
-  return { app, call, close: () => db.close() };
+  return { app, db, call, close: () => db.close() };
 }

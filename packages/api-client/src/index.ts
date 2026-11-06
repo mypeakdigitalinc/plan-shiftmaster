@@ -4,6 +4,9 @@
  */
 import type {
   ApiError,
+  AuditEntry,
+  NotificationList,
+  PushTokenInput,
   Approvals,
   CreateOfferInput,
   CreateSwapInput,
@@ -164,6 +167,19 @@ export function createApiClient({ baseUrl, getAccessToken, fetch: f = fetch }: A
     trades: {
       mine: () => request<MyTrades>('GET', '/v1/me/trades'),
       approvals: () => request<Approvals>('GET', '/v1/approvals'),
+    },
+    notifications: {
+      list: (opts: { unreadOnly?: boolean } = {}) =>
+        request<NotificationList>('GET', `/v1/notifications${opts.unreadOnly ? '?unreadOnly=true' : ''}`),
+      markRead: (ids?: string[]) => request<{ updated: number }>('POST', '/v1/notifications/read', ids ? { ids } : {}),
+      registerPushToken: (input: PushTokenInput) => request<void>('POST', '/v1/push-tokens', input),
+      unregisterPushToken: (token: string) => request<void>('POST', '/v1/push-tokens/unregister', { token }),
+    },
+    audit: {
+      list: (q: { entityType?: string; entityId?: string; limit?: number } = {}) => {
+        const qs = new URLSearchParams(Object.entries(q).filter(([, v]) => v !== undefined).map(([k, v]) => [k, String(v)]));
+        return request<AuditEntry[]>('GET', `/v1/audit${qs.size ? `?${qs}` : ''}`);
+      },
     },
     shiftTemplates: {
       list: () => request<ShiftTemplate[]>('GET', '/v1/shift-templates'),

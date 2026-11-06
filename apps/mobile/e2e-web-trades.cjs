@@ -81,7 +81,11 @@ const addDays = (d, n) => new Date(Date.parse(`${d}T12:00:00Z`) + n * 86400000).
     await signOut();
     await login(B.email);
     await page.getByRole('tab', { name: /Requests/ }).getByText('1').waitFor();
-    await page.getByRole('tab', { name: /Requests/ }).click();
+    // the bell shows the swap request; tapping it goes to Requests
+    await page.getByRole('button', { name: /^Notifications, \d+ unread$/ }).click();
+    await page.getByRole('button', { name: /^Unread: Swap request\./ }).waitFor();
+    await page.screenshot({ path: `${out}/t0-notifications.png` });
+    await page.getByRole('button', { name: /^Unread: Swap request\./ }).click();
     await page.getByText(`${A.name} wants to swap`).waitFor();
     await page.getByText('“school concert”').waitFor();
     await page.screenshot({ path: `${out}/t3-incoming.png` });

@@ -93,3 +93,15 @@ export function useVisibleShifts(days = 28) {
     enabled,
   });
 }
+
+// ---------- M3: notifications ----------
+export const useNotifications = () =>
+  useQuery({ queryKey: ['notifications'], queryFn: () => api.notifications.list(), enabled: useSignedIn(), refetchInterval: 60_000 });
+
+/** Where tapping a notification should go. */
+export function routeForNotification(type: string, data: Record<string, unknown>): string {
+  if (type === 'shift_available') return '/(tabs)/market';
+  if (data.swapId || data.requestId || data.offerId) return '/(tabs)/requests';
+  if (typeof data.shiftId === 'string') return `/shift/${data.shiftId}`;
+  return '/(tabs)';
+}

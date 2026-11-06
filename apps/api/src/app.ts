@@ -34,6 +34,9 @@ import {
   type Run,
 } from './http';
 import { toInvitation, toOrganization, toProfile } from './mappers';
+import { runJobs } from './jobs';
+import type { PushSender } from './push';
+import { registerNotificationRoutes } from './routes/notifications';
 import { registerShiftRoutes } from './routes/shifts';
 import { registerTradeRoutes } from './routes/trades';
 import { registerStructureRoutes } from './routes/structure';
@@ -45,6 +48,9 @@ export type AppDeps = {
   appUrl?: string;
   /** DEV ONLY — HS256 secret to enable POST /dev/token. Never set in production. */
   devLoginSecret?: string;
+  /** Enables POST /internal/jobs/run when set; callers send it in the x-jobs-secret header. */
+  jobsSecret?: string;
+  pushSender?: PushSender;
 };
 
 // ---------- shared queries ----------
@@ -450,6 +456,18 @@ export function createApp(deps: AppDeps) {
   registerStructureRoutes(app, run);
   registerShiftRoutes(app, run);
   registerTradeRoutes(app, run);
+  registerNotificationRoutes(app, run);
+
+  // Scheduled jobs: reminders, offer expiry, push delivery. Not under /v1 (no user token).
+  if (deps.jobsSecret) {
+    app.post('/internal/jobs/run', async (c) => {
+      if (c.req.header('x-jobs-secret') !== deps.jobsSecret) {
+        return c.json({ error: { code: 'unauthorized', message: 'Bad jobs secret' } }, 401);
+      }
+      const sender = deps.pushSender ?? (async (m) => m.map((x) => ({ token: x.to, ok: false, error: 'no push sender' })));
+      return c.json(await runJobs(deps.db, sender), 200);
+    });
+  }
 
   // ----- docs -----
   app.doc31('/openapi.json', {

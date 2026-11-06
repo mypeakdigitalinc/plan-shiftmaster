@@ -5,6 +5,7 @@ import { createApp } from '../src/app';
 const app = createApp({
   db: {
     asUser: async () => { throw new Error('no db'); },
+    asOwner: async () => { throw new Error('no db'); },
     ping: async () => true,
     findProfileIdByEmail: async () => null,
     close: async () => {},

@@ -3,6 +3,7 @@ import type { Me } from '@shifthub/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import { api, getAuth } from './api';
+import { unregisterPush } from './push';
 
 type SessionState = {
   /** undefined while loading */
@@ -31,6 +32,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const me = useQuery({ queryKey: ['me'], queryFn: api.me.get, enabled: !!session, retry: 1 });
 
   const signOut = useCallback(async () => {
+    await unregisterPush().catch(() => {});
     await getAuth().signOut();
     qc.clear();
   }, [qc]);

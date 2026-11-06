@@ -10,6 +10,8 @@ export type Tx = postgres.TransactionSql;
 export type Db = {
   asUser<T>(user: AuthUser, fn: (tx: Tx) => Promise<T>): Promise<T>;
   ping(): Promise<boolean>;
+  /** Owner-level transaction for scheduled jobs (bypasses RLS). Never use for user requests. */
+  asOwner<T>(fn: (tx: Tx) => Promise<T>): Promise<T>;
   /** Owner-level lookup used only by dev login (bypasses RLS). */
   findProfileIdByEmail(email: string): Promise<string | null>;
   close(): Promise<void>;
@@ -33,6 +35,9 @@ export function createDb(databaseUrl: string, opts: { max?: number } = {}): Db {
     async ping() {
       await sql`select 1`;
       return true;
+    },
+    async asOwner(fn) {
+      return (await sql.begin((tx) => fn(tx))) as Awaited<ReturnType<typeof fn>>;
     },
     async findProfileIdByEmail(email) {
       const [row] = await sql`select id from app.profiles where email = ${email}`;

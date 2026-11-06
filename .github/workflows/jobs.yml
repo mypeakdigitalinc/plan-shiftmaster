@@ -1,0 +1,25 @@
+name: Scheduled jobs
+
+# Calls the API's job runner (shift reminders, offer expiry, push delivery).
+# Free option for the MVP; replace with Vercel Cron, Supabase pg_cron or AWS EventBridge later.
+# Does nothing until the JOBS_URL and JOBS_SECRET repository secrets are set.
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Run ShiftHub jobs
+        env:
+          JOBS_URL: ${{ secrets.JOBS_URL }}
+          JOBS_SECRET: ${{ secrets.JOBS_SECRET }}
+        run: |
+          if [ -z "$JOBS_URL" ] || [ -z "$JOBS_SECRET" ]; then
+            echo "JOBS_URL / JOBS_SECRET not configured; skipping."
+            exit 0
+          fi
+          curl --fail-with-body -sS -X POST -H "x-jobs-secret: $JOBS_SECRET" "$JOBS_URL/internal/jobs/run"

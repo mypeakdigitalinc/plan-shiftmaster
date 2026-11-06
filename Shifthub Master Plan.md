@@ -216,7 +216,7 @@ Work runs in three parallel tracks: **Database → Web Portal → Mobile App**. 
 | **D2 Org & people** (wk 2) ✅ done (+ API endpoints) | `sites`, `areas`, `assignments`, `employee_areas`, `availability`, `shift_templates` (+ defaults), RLS, seed: LTC facility (100 staff, RN/RPN/PSW) + sample group | Web W1 |
 | **D3 Scheduling** (wk 3) ✅ done (+ API endpoints) | `shifts` with draft/published, schedule-visibility RLS (`share_schedule`), `copy_week()` and `publish_week()` RPCs | Web W2, Mobile M1 |
 | **D4 Marketplace & swaps** (wk 4) ✅ done (+ API endpoints) | `shift_offers`, `shift_offer_requests`, `shift_swaps`, RPCs: `approve_pickup()`, `approve_swap()` (position + double-booking checks, auto-approve in group mode) | Web W3, Mobile M2 |
-| **D5 Notifications** (wk 5) | `notifications`, `push_tokens`, Edge Function to send Expo push, pg_cron 12h reminders, `audit_logs` triggers | Mobile M3 |
+| **D5 Notifications** (wk 5) ✅ done (+ job runner endpoint) | `notifications`, `push_tokens`, Edge Function to send Expo push, pg_cron 12h reminders, `audit_logs` triggers | Mobile M3 |
 | **D6 Hardening** (wk 6) | RLS test suite (cross-org isolation), index review, generated TS types in `packages/types` | Pilot |
 
 ### Track 2 — Web Portal (Next.js, managers/admins)
@@ -225,7 +225,7 @@ Work runs in three parallel tracks: **Database → Web Portal → Mobile App**. 
 | **W1 Setup screens** (wk 2) ✅ done (+ settings, dev login) | Login, org onboarding (facility/group), Locations (sites → areas → assignments), Employees (invite, role, position, areas), Shift Templates | D1, D2 |
 | **W2 Schedule** (wk 3) ✅ done (click-to-assign; drag-and-drop post-MVP) | Week calendar by site/area, create/edit/assign shifts, availability shown, copy week, publish | D3 |
 | **W3 Approvals** (wk 4) ✅ done (+ post to marketplace from schedule) | Pickup and swap approval queue, approve/reject with reason | D4 |
-| **W4 Settings & dashboard** (wk 5) | Org settings (approval rules, modes), dashboard (today's coverage, pending approvals), audit log view | D4, D5 |
+| **W4 Settings & dashboard** (wk 5) ✅ done (settings in W1; dashboard, audit view) | Org settings (approval rules, modes), dashboard (today's coverage, pending approvals), audit log view | D4, D5 |
 | **Tests** (wk 7) | Playwright: publish, approve pickup, approve swap | All |
 
 ### Track 3 — Mobile App (Expo, employees)
@@ -233,7 +233,7 @@ Work runs in three parallel tracks: **Database → Web Portal → Mobile App**. 
 |---|---|---|
 | **M1 Core app** (wk 4) ✅ done (+ share toggle, profile edit) | Login / accept invite / join group by code, My Schedule (list + week), shift detail, Add My Shift (group mode), Availability | D3, W2 (published shifts to view) |
 | **M2 Marketplace & swaps** (wk 5) ✅ done | Give away shift, Open Shifts + Request, Swap request / accept / reject, My Requests status | D4 |
-| **M3 Notifications & sharing** (wk 6) | Push registration, notification inbox, share-schedule toggle, Team Schedule view | D5 |
+| **M3 Notifications & sharing** (wk 6) ✅ done (push needs an EAS project id) | Push registration, notification inbox, share-schedule toggle, Team Schedule view | D5 |
 | **Release** (wk 7) | E2E smoke tests, EAS builds → TestFlight + Play internal track | All |
 
 **Definition of done for each feature:** migration + RLS + API function in `packages/api` + UI + test.

@@ -4,13 +4,14 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, type ReactNode } from 'react';
 import { Badge, Button, cn, Spinner } from '@/components/ui';
-import { useApprovals } from '@/lib/hooks';
+import { useApprovals, useNotifications } from '@/lib/hooks';
 import { isManagerRole, useRequireOrg, useSession } from '@/lib/session';
 
 const NAV = [
   { href: '/dashboard', label: 'Dashboard' },
   { href: '/schedule', label: 'Schedule' },
   { href: '/approvals', label: 'Approvals' },
+  { href: '/notifications', label: 'Notifications' },
   { href: '/employees', label: 'Employees' },
   { href: '/locations', label: 'Locations' },
   { href: '/templates', label: 'Shift templates' },
@@ -26,6 +27,12 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const approvals = useApprovals(ready && isManagerRole(me?.profile.role));
   const pending = (approvals.data?.pickups.length ?? 0) + (approvals.data?.swaps.length ?? 0);
+  const notifications = useNotifications(ready && isManagerRole(me?.profile.role));
+  const unread = notifications.data?.unreadCount ?? 0;
+  const counts: Record<string, { n: number; label: string; color: string }> = {
+    '/approvals': { n: pending, label: 'pending', color: 'bg-amber-500' },
+    '/notifications': { n: unread, label: 'unread', color: 'bg-sky-600' },
+  };
 
   if (!ready || !me?.organization) return <Spinner />;
 
@@ -59,9 +66,12 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           >
             <span className="flex items-center justify-between">
               {item.label}
-              {item.href === '/approvals' && pending > 0 && (
-                <span className="rounded-full bg-amber-500 px-1.5 text-xs font-semibold text-white" aria-label={`${pending} pending`}>
-                  {pending}
+              {(counts[item.href]?.n ?? 0) > 0 && (
+                <span
+                  className={cn('rounded-full px-1.5 text-xs font-semibold text-white', counts[item.href]!.color)}
+                  aria-label={`${counts[item.href]!.n} ${counts[item.href]!.label}`}
+                >
+                  {counts[item.href]!.n}
                 </span>
               )}
             </span>

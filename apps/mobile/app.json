@@ -14,7 +14,13 @@
       "package": "com.shifthub.app"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      [
+        "expo-notifications",
+        {
+          "color": "#0f766e"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": false
@@ -22,6 +28,11 @@
     "web": {
       "bundler": "metro",
       "output": "single"
+    },
+    "extra": {
+      "eas": {
+        "projectId": ""
+      }
     }
   }
 }

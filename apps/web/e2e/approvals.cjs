@@ -89,6 +89,17 @@ const addDays = (d, n) => new Date(Date.parse(`${d}T12:00:00Z`) + n * 86400000).
     await page.screenshot({ path: `${out}/a1-approvals.png` });
   });
 
+  await step('manager notifications', async () => {
+    await page.getByLabel(/^\d+ unread$/).waitFor();
+    await page.getByRole('link', { name: /^Notifications/ }).click();
+    await page.getByText('Pickup request').first().waitFor();
+    await page.getByText('Swap to approve').first().waitFor();
+    await page.getByText('Recent activity').waitFor();
+    await page.screenshot({ path: `${out}/a2-notifications.png` });
+    await page.getByRole('link', { name: /^Approvals/ }).click();
+    await page.getByText('Shift pickups (1)').waitFor();
+  });
+
   await step('approve pickup and swap', async () => {
     await page.getByRole('button', { name: 'Approve', exact: true }).click();
     await page.getByText('Shift pickups (1)').waitFor({ state: 'detached' });

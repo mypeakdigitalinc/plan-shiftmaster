@@ -53,3 +53,7 @@ export const useMarketplace = () => useQuery({ queryKey: keys.marketplace, query
 
 /** Everything a trade decision can change. */
 export const tradeKeys = [keys.approvals, keys.marketplace, keys.shifts];
+
+export const useNotifications = (enabled = true) =>
+  useQuery({ queryKey: ['notifications'], queryFn: () => api.notifications.list(), enabled, refetchInterval: 60_000 });
+export const useAudit = () => useQuery({ queryKey: ['audit'], queryFn: () => api.audit.list({ limit: 50 }) });

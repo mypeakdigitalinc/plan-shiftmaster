@@ -3,6 +3,7 @@ import { createApp } from './app';
 import { createTokenVerifier } from './auth';
 import { loadConfig } from './config';
 import { createDb } from './db';
+import { createExpoPushSender } from './push';
 
 const config = loadConfig();
 const db = createDb(config.databaseUrl);
@@ -11,6 +12,8 @@ const app = createApp({
   verifyToken: createTokenVerifier(config),
   corsOrigins: config.corsOrigins,
   appUrl: config.appUrl,
+  jobsSecret: config.jobsSecret,
+  pushSender: createExpoPushSender({ accessToken: config.expoAccessToken }),
   devLoginSecret: config.devLoginSecret,
 });
 

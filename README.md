@@ -3,7 +3,7 @@
 Multi-tenant shift scheduling for care facilities and self-organized worker groups.
 See **[Shifthub Master Plan.md](./Shifthub%20Master%20Plan.md)** for scope, data model and roadmap.
 
-**Status:** Database phases D1–D4 done with API endpoints: organizations & onboarding; sites, areas, assignments, shift templates, availability; shifts with draft/publish, copy week, schedule sharing; shift marketplace (give away / pick up) and swaps with manager approval or auto-approve. Web portal W1–W3 done: login, onboarding, invite accept, dashboard, employees, locations, shift templates, settings, the weekly schedule (assign, copy last week, publish, post to marketplace) and the approvals queue. Mobile M1 done: login, join by code / invitation / start a group, My Schedule, shift details, profile with schedule-sharing toggle, availability, add-my-shift (groups). Mobile M2 done: open shifts (request/withdraw), give away or swap from a shift, requests inbox with swap accept/decline.
+**Status:** Database phases D1–D4 done with API endpoints: organizations & onboarding; sites, areas, assignments, shift templates, availability; shifts with draft/publish, copy week, schedule sharing; shift marketplace (give away / pick up) and swaps with manager approval or auto-approve. Web portal W1–W3 done: login, onboarding, invite accept, dashboard, employees, locations, shift templates, settings, the weekly schedule (assign, copy last week, publish, post to marketplace) and the approvals queue. Mobile M1 done: login, join by code / invitation / start a group, My Schedule, shift details, profile with schedule-sharing toggle, availability, add-my-shift (groups). Mobile M2 done: open shifts (request/withdraw), give away or swap from a shift, requests inbox with swap accept/decline. D5/M3 done: in-app + push notifications, shift reminders, offer expiry job, audit log, notifications page (web), bell + inbox + team schedule (mobile).
 
 ## Structure
 
@@ -64,6 +64,22 @@ pnpm test        # needs Postgres; override with TEST_DATABASE_URL=postgresql://
 - `apps/mobile/e2e-web.cjs`, `e2e-web-trades.cjs` — mobile smoke tests against the web build at iPhone size
 - `apps/web/e2e` — browser smoke tests (run against a local seeded stack; see file headers)
 - `apps/api/test` — API integration tests (auth, onboarding, members, settings, locations, templates, availability, shifts)
+
+## Notifications & scheduled jobs
+
+Notifications are created by database triggers (schedule published, shift assigned/removed/cancelled,
+open shifts, pickup and swap updates). Each one is also queued for push. A job runner delivers push via
+Expo, sends 12-hour shift reminders and expires old offers:
+
+```bash
+curl -X POST -H "x-jobs-secret: $JOBS_SECRET" http://localhost:8787/internal/jobs/run
+```
+
+Run it every ~15 minutes from any scheduler: `.github/workflows/jobs.yml` (set `JOBS_URL` and `JOBS_SECRET`
+repository secrets), Vercel Cron, Supabase `pg_cron` + `pg_net`, or AWS EventBridge → `apps/api/src/lambda.ts`.
+
+Mobile push needs an EAS project: run `eas init` in `apps/mobile` (fills `expo.extra.eas.projectId`) and
+test on a physical device. The web build of the mobile app shows notifications in-app only.
 
 ## Deploying (when accounts exist)
 

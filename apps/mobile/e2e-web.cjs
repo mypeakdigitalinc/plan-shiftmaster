@@ -42,6 +42,15 @@ async function apiAs(email, path) {
     await page.screenshot({ path: `${out}/m1-schedule.png` });
   });
 
+  await step('team schedule lists coworkers who share', async () => {
+    await page.getByRole('button', { name: 'Team schedule' }).click();
+    await page.getByText('Coworkers who share their schedule.', { exact: false }).waitFor();
+    await page.getByText(/^Staff \d+$/).first().waitFor();
+    await page.screenshot({ path: `${out}/m6-team.png` });
+    await page.goBack();
+    await page.getByText('Hi Staff').waitFor();
+  });
+
   await step('opens a shift', async () => {
     const card = page.getByRole('button', { name: /^Shift \d\d:\d\d to/ }).first();
     if (await card.count()) {
