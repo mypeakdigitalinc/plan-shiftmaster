@@ -3,7 +3,7 @@
 Multi-tenant shift scheduling for care facilities and self-organized worker groups.
 See **[Shifthub Master Plan.md](./Shifthub%20Master%20Plan.md)** for scope, data model and roadmap.
 
-**Status:** Database phases D1–D4 done with API endpoints: organizations & onboarding; sites, areas, assignments, shift templates, availability; shifts with draft/publish, copy week, schedule sharing; shift marketplace (give away / pick up) and swaps with manager approval or auto-approve. Web portal W1–W3 done: login, onboarding, invite accept, dashboard, employees, locations, shift templates, settings, the weekly schedule (assign, copy last week, publish, post to marketplace) and the approvals queue. Mobile M1 done: login, join by code / invitation / start a group, My Schedule, shift details, profile with schedule-sharing toggle, availability, add-my-shift (groups).
+**Status:** Database phases D1–D4 done with API endpoints: organizations & onboarding; sites, areas, assignments, shift templates, availability; shifts with draft/publish, copy week, schedule sharing; shift marketplace (give away / pick up) and swaps with manager approval or auto-approve. Web portal W1–W3 done: login, onboarding, invite accept, dashboard, employees, locations, shift templates, settings, the weekly schedule (assign, copy last week, publish, post to marketplace) and the approvals queue. Mobile M1 done: login, join by code / invitation / start a group, My Schedule, shift details, profile with schedule-sharing toggle, availability, add-my-shift (groups). Mobile M2 done: open shifts (request/withdraw), give away or swap from a shift, requests inbox with swap accept/decline.
 
 ## Structure
 
@@ -61,7 +61,7 @@ pnpm test        # needs Postgres; override with TEST_DATABASE_URL=postgresql://
 
 - `supabase/tests` — tenant isolation, role permissions, onboarding RPCs (RLS against real Postgres)
 - `packages/shared` — date/timezone/availability helpers
-- `apps/mobile/e2e-web.cjs` — mobile smoke test against the web build at iPhone size
+- `apps/mobile/e2e-web.cjs`, `e2e-web-trades.cjs` — mobile smoke tests against the web build at iPhone size
 - `apps/web/e2e` — browser smoke tests (run against a local seeded stack; see file headers)
 - `apps/api/test` — API integration tests (auth, onboarding, members, settings, locations, templates, availability, shifts)
 

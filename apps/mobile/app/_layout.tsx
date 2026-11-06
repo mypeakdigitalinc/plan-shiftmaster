@@ -53,6 +53,7 @@ export default function RootLayout() {
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="shift/[id]" options={{ title: 'Shift' }} />
             <Stack.Screen name="availability" options={{ title: 'Availability' }} />
+            <Stack.Screen name="swap/[id]" options={{ title: 'Swap shift' }} />
             <Stack.Screen name="add-shift" options={{ title: 'Add my shift', presentation: 'modal' }} />
           </Stack>
         </SessionProvider>

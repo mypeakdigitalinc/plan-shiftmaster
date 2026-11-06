@@ -64,3 +64,32 @@ export function useApiMutation<TVars, TResult>(fn: (vars: TVars) => Promise<TRes
     onSuccess: () => Promise.all(invalidate.map((queryKey) => qc.invalidateQueries({ queryKey }))),
   });
 }
+
+// ---------- M2: trades ----------
+export const tradeKeys: QueryKey[] = [['trades'], ['marketplace'], keys.shifts];
+
+export const useMyTrades = () => useQuery({ queryKey: ['trades'], queryFn: api.trades.mine, enabled: useSignedIn() });
+export const useMarketplace = () =>
+  useQuery({ queryKey: ['marketplace'], queryFn: () => api.marketplace.list(), enabled: useSignedIn() });
+
+/** Areas I may work (for filtering swap candidates client-side; the server re-checks). */
+export function useMyAreas() {
+  const { me, session } = useSession();
+  return useQuery({
+    queryKey: ['my-areas', me?.profile.id],
+    queryFn: () => api.members.areas(me!.profile.id),
+    enabled: !!session && !!me?.profile.id,
+  });
+}
+
+/** Coworkers' published future shifts visible to me (shared schedules), next 4 weeks. */
+export function useVisibleShifts(days = 28) {
+  const today = useToday();
+  const enabled = useSignedIn();
+  const to = addDays(today, days);
+  return useQuery({
+    queryKey: [...keys.shifts, 'visible', today, to],
+    queryFn: () => api.shifts.list({ from: today, to, status: 'published' }),
+    enabled,
+  });
+}
